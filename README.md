@@ -40,13 +40,14 @@ API sencilla para consultar cuánto tiempo lleva un usuario siguiendo a un canal
 - `PORT` solo para desarrollo local; en plataformas como Render se asigna automáticamente.
 - `JWT_SECRET`: clave para firmar la cookie JWT de sesión.
 - `OAUTH_REDIRECT_URI`: URL de callback (p. ej. `http://localhost:3000/auth/callback`). Configura la misma en Twitch Developers.
-- `TWITCH_CHANNEL_LOGIN`: canal por defecto. Si no pasas `channel`/`to`, se usa este valor.
+- `TWITCH_CHANNEL_LOGIN`: canal por defecto y canal servido en el endpoint estilo Garret.
+- `TWITCH_CHANNEL_TOKEN`: token de usuario del canal o moderador, con scope `moderator:read:followers`.
 
 ## Endpoints
 
 - `GET /api/followage?touser=<viewer>&channel=<channel>&format=text|json&lang=es|en`
   - `touser` (alias: `user`): usuario que potencialmente sigue
-  - `channel` (alias: `to`): canal a verificar. Si no lo pasas, se usa `TWITCH_CHANNEL_LOGIN`.
+  - `channel` (alias: `to`): canal a verificar
   - `format`: `text` (default) o `json`
   - `lang`: `es` (default) o `en`
 
@@ -54,11 +55,22 @@ API sencilla para consultar cuánto tiempo lleva un usuario siguiendo a un canal
 
   - Texto (es):
     - `http://localhost:3000/api/followage?touser=usuario&channel=canal`
-    - `http://localhost:3000/api/followage?touser=usuario` (si definiste `TWITCH_CHANNEL_LOGIN`)
   - JSON:
     - `http://localhost:3000/api/followage?touser=usuario&channel=canal&format=json`
 
+  - Estilo Garret:
+    - `http://localhost:3000/twitch/followage/tu_canal/usuario?format=ymdhis&ping=false`
+    - `https://followage-api.onrender.com/twitch/followage/tu_canal/usuario?format=ymwdis&ping=true`
+
 - `GET /twitch/followage/:viewer/:channel?lang=es|en`
+  
+  Estilo Garret:
+  - `GET /twitch/followage/{StreamerUsername}/{ViewerUsername}?format={Format}&ping={true|false}&moderatorId={ModeratorId}`
+    - `StreamerUsername`: login del canal
+    - `ViewerUsername`: login del viewer
+    - `format`: patrón de unidades `y m w d h i s` (por defecto `ymdhis`)
+    - `ping`: si es `true`, antepone `@StreamerUsername @ViewerUsername` al resultado
+    - `moderatorId`: opcional; el servidor usa `TWITCH_CHANNEL_TOKEN` del canal configurado.
 
 ## Autenticación
 

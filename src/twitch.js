@@ -1,4 +1,4 @@
-import { formatFollowageText, diffFromNow } from './utils.js';
+import { formatFollowageText, diffFromNow, formatByPattern } from './utils.js';
 
 let cachedToken = null;
 let cachedTokenExp = 0;
@@ -83,6 +83,56 @@ export async function getFollowRecord(fromId, toId, userToken) {
     if (!cursor) break;
   }
   return null;
+}
+
+export async function getFollowerRecordByChannelToken(broadcasterId, userId, channelToken) {
+  if (!channelToken) {
+    const err = new Error('Falta token del canal/moderador (scope moderator:read:followers)');
+    err.statusCode = 401;
+    throw err;
+  }
+  const data = await twitchFetch('channels/followers', { broadcaster_id: broadcasterId, user_id: userId, first: '1' }, channelToken);
+  const item = (data?.data || [])[0];
+  return item || null;
+}
+
+export async function getFollowageJsonByFollowers({ viewer, channel, channelToken }) {
+  const viewerUser = await getUserByLogin(viewer);
+  const channelUser = await getUserByLogin(channel);
+  if (!viewerUser) {
+    const err = new Error(`No se encontró el usuario viewer "${viewer}"`);
+    err.statusCode = 404;
+    throw err;
+  }
+  if (!channelUser) {
+    const err = new Error(`No se encontró el canal "${channel}"`);
+    err.statusCode = 404;
+    throw err;
+  }
+  const follow = await getFollowerRecordByChannelToken(channelUser.id, viewerUser.id, channelToken);
+  if (!follow) {
+    return {
+      viewer: viewerUser.login,
+      channel: channelUser.login,
+      following: false
+    };
+  }
+  const since = new Date(follow.followed_at);
+  const duration = diffFromNow(since);
+  return {
+    viewer: viewerUser.login,
+    channel: channelUser.login,
+    following: true,
+    followed_at: since.toISOString(),
+    duration
+  };
+}
+
+export async function getFollowageTextByPattern({ viewer, channel, pattern = 'ymdhis', ping = false, channelToken }) {
+  const json = await getFollowageJsonByFollowers({ viewer, channel, channelToken });
+  if (!json.following) return ping ? `@${channel} @${viewer} not following` : 'not following';
+  const formatted = formatByPattern(json.duration, pattern);
+  return ping ? `@${channel} @${viewer} ${formatted}` : formatted;
 }
 
 export async function getFollowageJson({ viewer, channel, userToken }) {

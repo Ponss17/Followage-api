@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
-import { getFollowageText, getFollowageJson } from './twitch.js';
+import { getFollowageText, getFollowageJson, getFollowageTextByPattern } from './twitch.js';
 
 dotenv.config();
 
@@ -176,15 +176,38 @@ app.get('/api/followage', async (req, res) => {
   }
 });
 
-app.get('/twitch/followage/:viewer/:channel', async (req, res) => {
-  const { viewer, channel } = req.params;
-  const lang = (req.query.lang || 'es').toString().trim();
+// Estilo Garret: /twitch/followage/{StreamerUsername}/{ViewerUsername}?format=ymdhis&ping=true|false&moderatorId=ID
+app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
+  const streamer = req.params.streamer?.toString().trim();
+  const viewer = req.params.viewer?.toString().trim();
+  const format = (req.query.format || 'ymdhis').toString().trim();
+  const ping = ((req.query.ping || 'false').toString().trim().toLowerCase() === 'true');
+  const moderatorId = (req.query.moderatorId || '').toString().trim();
+
+  const loginRe = /^[A-Za-z0-9_]{1,32}$/;
+  if (!loginRe.test(streamer) || !loginRe.test(viewer)) {
+    return res.status(400).send('invalid parameters');
+  }
+
+  // Token del canal/moderador desde env. Debe tener scope moderator:read:followers
+  const channelToken = process.env.TWITCH_CHANNEL_TOKEN || '';
+  const configuredChannel = (process.env.TWITCH_CHANNEL_LOGIN || '').toString().trim();
+
+  if (!channelToken) {
+    return res.status(401).send('channel token not configured');
+  }
+  if (configuredChannel && configuredChannel.toLowerCase() !== streamer.toLowerCase()) {
+    // Nota: por ahora sólo soportamos el canal configurado en env
+    return res.status(400).send('unsupported channel');
+  }
+
   try {
-    const text = await getFollowageText({ viewer, channel, lang });
+    const text = await getFollowageTextByPattern({ viewer, channel: streamer, pattern: format, ping, channelToken });
+    res.type('text/plain');
     return res.send(text);
   } catch (err) {
     const status = err?.statusCode || 500;
-    return res.status(status).json({ error: 'followage_error', message: err?.message || 'Error inesperado' });
+    return res.status(status).send('error');
   }
 });
 

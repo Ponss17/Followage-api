@@ -7,15 +7,47 @@ export function diffFromNow(sinceDate) {
   let ms = now - sinceDate;
   if (ms < 0) ms = 0;
 
-  const seconds = Math.floor(ms / 1000);
-  const minutes = Math.floor(seconds / 60);
-  const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
-  const years = Math.floor(days / 365);
-  const months = Math.floor((days % 365) / 30);
-  const remDays = Math.floor((days % 365) % 30);
+  const secondsTotal = Math.floor(ms / 1000);
+  const minutesTotal = Math.floor(secondsTotal / 60);
+  const hoursTotal = Math.floor(minutesTotal / 60);
+  const daysTotal = Math.floor(hoursTotal / 24);
 
-  return { years, months, days: remDays, totalDays: days };
+  const years = Math.floor(daysTotal / 365);
+  const months = Math.floor((daysTotal % 365) / 30);
+  const remDays = Math.floor((daysTotal % 365) % 30);
+  const weeks = Math.floor(remDays / 7);
+  const days = remDays % 7;
+
+  const hours = hoursTotal % 24;
+  const minutes = minutesTotal % 60;
+  const seconds = secondsTotal % 60;
+
+  return { years, months, weeks, days, hours, minutes, seconds, totalDays: daysTotal };
+}
+
+export function formatByPattern(duration, pattern = 'ymdhis') {
+  const tokens = {
+    y: { value: duration.years, singular: 'year', plural: 'years' },
+    m: { value: duration.months, singular: 'month', plural: 'months' },
+    w: { value: duration.weeks, singular: 'week', plural: 'weeks' },
+    d: { value: duration.days, singular: 'day', plural: 'days' },
+    h: { value: duration.hours, singular: 'hour', plural: 'hours' },
+    i: { value: duration.minutes, singular: 'minute', plural: 'minutes' },
+    s: { value: duration.seconds, singular: 'second', plural: 'seconds' },
+  };
+
+  const parts = [];
+  for (const ch of pattern) {
+    const t = tokens[ch];
+    if (!t) continue;
+    const v = t.value;
+    if (typeof v !== 'number') continue;
+    // Mostrar cero si todo sería vacío, para evitar cadena vacía
+    if (v || parts.length === 0) {
+      parts.push(`${v} ${pluralize(v, t.singular, t.plural)}`);
+    }
+  }
+  return parts.join(', ');
 }
 
 export function formatFollowageText(json, lang = 'es') {
