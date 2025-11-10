@@ -23,6 +23,11 @@
           <button class="btn" id="loginBtn">Iniciar sesión con Twitch</button>
           <button class="btn btn-secondary" id="logoutBtn" style="display:none">Cerrar sesión</button>
         </div>
+        <div class="auth-box" id="channelAuthBox">
+          <span id="channelAuthStatus">Canal no autenticado</span>
+          <button class="btn" id="channelLoginBtn">Iniciar sesión Canal/Moderador</button>
+          <button class="btn btn-secondary" id="channelLogoutBtn" style="display:none">Cerrar sesión Canal</button>
+        </div>
       </div>
     </header>
 
@@ -31,6 +36,9 @@
         <h2>Demo rápida</h2>
         <p id="demoNotice" class="notice" style="display:none">
           Debes iniciar sesión con Twitch para usar la demo. El campo <code>Usuario</code> usa tu sesión.
+        </p>
+        <p id="channelNotice" class="notice" style="display:none">
+          Para usar el endpoint estilo Garret, inicia sesión con el canal o un moderador para obtener el token con permisos.
         </p>
         <form id="followage-form">
           <div class="grid">

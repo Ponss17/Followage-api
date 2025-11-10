@@ -8,7 +8,12 @@ const authStatusEl = document.getElementById('authStatus');
 const loginBtn = document.getElementById('loginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const demoNotice = document.getElementById('demoNotice');
+const channelAuthStatusEl = document.getElementById('channelAuthStatus');
+const channelLoginBtn = document.getElementById('channelLoginBtn');
+const channelLogoutBtn = document.getElementById('channelLogoutBtn');
+const channelNotice = document.getElementById('channelNotice');
 let isAuthenticated = false;
+let isChannelAuthenticated = false;
 
 async function refreshAuth() {
   try {
@@ -54,6 +59,44 @@ if (logoutBtn) {
 }
 
 refreshAuth();
+
+async function refreshChannelAuth() {
+  try {
+    const resp = await fetch('/channel/me');
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.authenticated && data.channel) {
+        isChannelAuthenticated = true;
+        if (channelAuthStatusEl) channelAuthStatusEl.textContent = `Canal autenticado: ${data.channel.display_name || data.channel.channel_login}`;
+        if (channelLoginBtn) channelLoginBtn.style.display = 'none';
+        if (channelLogoutBtn) channelLogoutBtn.style.display = '';
+        if (channelNotice) channelNotice.style.display = 'none';
+      } else {
+        isChannelAuthenticated = false;
+        if (channelAuthStatusEl) channelAuthStatusEl.textContent = 'Canal no autenticado';
+        if (channelLoginBtn) channelLoginBtn.style.display = '';
+        if (channelLogoutBtn) channelLogoutBtn.style.display = 'none';
+        if (channelNotice) channelNotice.style.display = '';
+      }
+    }
+  } catch (_) {}
+}
+
+if (channelLoginBtn) {
+  channelLoginBtn.addEventListener('click', () => {
+    window.location.href = '/auth/channel/login';
+  });
+}
+if (channelLogoutBtn) {
+  channelLogoutBtn.addEventListener('click', async () => {
+    try {
+      await fetch('/auth/channel/logout', { method: 'POST' });
+    } catch (_) {}
+    window.location.reload();
+  });
+}
+
+refreshChannelAuth();
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
