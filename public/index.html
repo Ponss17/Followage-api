@@ -18,6 +18,11 @@
           <a class="btn" href="#demo">Probar ahora</a>
           <a class="btn btn-secondary" href="#docs">Ver pasos</a>
         </div>
+        <div class="auth-box" id="authBox">
+          <span id="authStatus">No autenticado</span>
+          <button class="btn" id="loginBtn">Iniciar sesión con Twitch</button>
+          <button class="btn btn-secondary" id="logoutBtn" style="display:none">Cerrar sesión</button>
+        </div>
       </div>
     </header>
 
@@ -67,6 +72,7 @@
             </ul>
           </li>
           <li>Salud del servicio: <code>/health</code>.</li>
+          <li>Si inicias sesión, el campo <code>touser</code> se completará con tu usuario automáticamente.</li>
         </ol>
         <p>
           También disponible: <code>/twitch/followage/:viewer/:channel?lang=es|en</code>

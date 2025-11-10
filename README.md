@@ -2,6 +2,11 @@
 
 API sencilla para consultar cuánto tiempo lleva un usuario siguiendo a un canal de Twitch (similar al comando de Nightbot).
 
+## Vista pública
+
+- La landing se sirve en `/` y muestra ejemplos y un formulario para probar la API.
+- Los archivos estáticos (`index.html`, `styles.css`, `app.js`) están en `public/`.
+
 ## Requisitos
 
 - Node.js 18 o superior (usa `fetch` nativo)
@@ -29,6 +34,13 @@ API sencilla para consultar cuánto tiempo lleva un usuario siguiendo a un canal
    npm start
    ```
 
+## Variables de entorno
+
+- `TWITCH_CLIENT_ID` y `TWITCH_CLIENT_SECRET` son obligatorias.
+- `PORT` solo para desarrollo local; en plataformas como Render se asigna automáticamente.
+- `JWT_SECRET`: clave para firmar la cookie JWT de sesión.
+- `OAUTH_REDIRECT_URI`: URL de callback (p. ej. `http://localhost:3000/auth/callback`). Configura la misma en Twitch Developers.
+
 ## Endpoints
 
 - `GET /api/followage?touser=<viewer>&channel=<channel>&format=text|json&lang=es|en`
@@ -45,6 +57,15 @@ API sencilla para consultar cuánto tiempo lleva un usuario siguiendo a un canal
     - `http://localhost:3000/api/followage?touser=usuario&channel=canal&format=json`
 
 - `GET /twitch/followage/:viewer/:channel?lang=es|en`
+
+## Autenticación
+
+- `GET /auth/login`: redirige a Twitch para iniciar sesión.
+- `GET /auth/callback`: procesa el `code`, obtiene el usuario y guarda una cookie de sesión.
+- `GET /me`: devuelve `{ authenticated, user }`.
+- `POST /auth/logout`: limpia la sesión.
+
+Si estás autenticado, `GET /api/followage` usa tu `login` como `viewer` por defecto, así puedes omitir `touser`/`user`.
 
 ## Respuesta JSON
 
@@ -73,3 +94,21 @@ Si no sigue:
 - El token de aplicación de Twitch se cachea en memoria y se renueva automáticamente.
 - La precisión de meses/días es aproximada (30 días por mes, 365 por año) para uso rápido tipo chat/command.
 - Si necesitas precisión calendario exacta, podemos ajustar el cálculo.
+
+## Despliegue en Render
+
+Incluye `render.yaml` para crear el servicio vía Blueprint.
+
+1. Conecta el repo de GitHub en Render y usa Blueprint.
+2. Render creará el servicio web con:
+   - `buildCommand`: `npm install`
+   - `startCommand`: `npm start`
+   - `healthCheckPath`: `/health`
+   - `autoDeploy`: `true`
+3. Añade variables en Render:
+   - `TWITCH_CLIENT_ID` (secreto)
+   - `TWITCH_CLIENT_SECRET` (secreto)
+   - `JWT_SECRET` (secreto)
+   - `OAUTH_REDIRECT_URI` (tu dominio + `/auth/callback`)
+   - Opcional: `NODE_ENV=production`
+4. No definas `PORT` (Render la asigna).

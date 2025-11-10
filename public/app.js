@@ -4,6 +4,48 @@ const channelEl = document.getElementById('channel');
 const langEl = document.getElementById('lang');
 const formatEl = document.getElementById('format');
 const resultEl = document.getElementById('result');
+const authStatusEl = document.getElementById('authStatus');
+const loginBtn = document.getElementById('loginBtn');
+const logoutBtn = document.getElementById('logoutBtn');
+
+async function refreshAuth() {
+  try {
+    const resp = await fetch('/me');
+    if (resp.ok) {
+      const data = await resp.json();
+      if (data.authenticated && data.user) {
+        authStatusEl.textContent = `Sesión: ${data.user.display_name || data.user.login}`;
+        loginBtn.style.display = 'none';
+        logoutBtn.style.display = '';
+        if (viewerEl && !viewerEl.value) {
+          viewerEl.value = data.user.login;
+        }
+      } else {
+        authStatusEl.textContent = 'No autenticado';
+        loginBtn.style.display = '';
+        logoutBtn.style.display = 'none';
+      }
+    }
+  } catch (_) {
+    // ignore
+  }
+}
+
+if (loginBtn) {
+  loginBtn.addEventListener('click', () => {
+    window.location.href = '/auth/login';
+  });
+}
+if (logoutBtn) {
+  logoutBtn.addEventListener('click', async () => {
+    try {
+      await fetch('/auth/logout', { method: 'POST' });
+    } catch (_) {}
+    window.location.reload();
+  });
+}
+
+refreshAuth();
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
