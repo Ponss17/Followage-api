@@ -1,14 +1,25 @@
 import express from 'express';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { getFollowageText, getFollowageJson } from './twitch.js';
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const publicDir = path.resolve(__dirname, '..', 'public');
 
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
+});
+
+// Static landing page and assets
+app.use(express.static(publicDir));
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(publicDir, 'index.html'));
 });
 
 app.get('/api/followage', async (req, res) => {
