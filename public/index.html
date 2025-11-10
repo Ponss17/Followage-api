@@ -29,11 +29,15 @@
     <main class="container">
       <section id="demo" class="card">
         <h2>Demo rápida</h2>
+        <p id="demoNotice" class="notice" style="display:none">
+          Debes iniciar sesión con Twitch para usar la demo. El campo <code>Usuario</code> usa tu sesión.
+        </p>
         <form id="followage-form">
           <div class="grid">
             <label>
               Usuario (touser)
-              <input type="text" id="viewer" placeholder="p.ej. someviewer" required />
+              <input type="text" id="viewer" placeholder="Se completará tras iniciar sesión" required />
+              <small class="hint">Se usa tu usuario autenticado. Para probar otro, inicia sesión con ese usuario.</small>
             </label>
             <label>
               Canal (channel)
@@ -68,15 +72,13 @@
           <li>Arranca el servidor: <code>npm install</code> y <code>npm start</code>.</li>
           <li>Usa el endpoint:
             <ul>
-              <li><code>/api/followage?touser=&lt;usuario&gt;&channel=&lt;canal&gt;&format=text|json&lang=es|en</code></li>
+              <li><code>/api/followage?channel=&lt;canal&gt;&format=text|json&lang=es|en</code> (requiere sesión; usa tu usuario por defecto)</li>
             </ul>
           </li>
           <li>Salud del servicio: <code>/health</code>.</li>
-          <li>Si inicias sesión, el campo <code>touser</code> se completará con tu usuario automáticamente.</li>
+          <li>El campo <code>Usuario</code> se completa con tu sesión y se bloquea.</li>
         </ol>
-        <p>
-          También disponible: <code>/twitch/followage/:viewer/:channel?lang=es|en</code>
-        </p>
+        <p class="muted">Para probar otro usuario, inicia sesión con esa cuenta de Twitch.</p>
       </section>
 
       <section class="card muted">

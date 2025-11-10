@@ -64,15 +64,25 @@ export async function getUserByLogin(login) {
 }
 
 export async function getFollowRecord(fromId, toId, userToken) {
-  // Nuevo endpoint: channels/followed requiere token de usuario con scope user:read:follows
+  // channels/followed: lista los canales que el usuario (fromId) sigue
+  // No admite filtro directo por broadcaster_id; iteramos hasta encontrar coincidencia
   if (!userToken) {
     const err = new Error('Se requiere autenticación del usuario para consultar followage');
     err.statusCode = 401;
     throw err;
   }
-  const data = await twitchFetch('channels/followed', { user_id: fromId, broadcaster_id: toId }, userToken);
-  if (!data?.data?.length) return null;
-  return data.data[0];
+  let cursor = null;
+  let safety = 0;
+  while (safety++ < 20) { // limita a ~2000 canales seguidos
+    const params = { user_id: fromId, first: '100' };
+    if (cursor) params.after = cursor;
+    const data = await twitchFetch('channels/followed', params, userToken);
+    const match = (data?.data || []).find((item) => item?.broadcaster_id === toId);
+    if (match) return match;
+    cursor = data?.pagination?.cursor || null;
+    if (!cursor) break;
+  }
+  return null;
 }
 
 export async function getFollowageJson({ viewer, channel, userToken }) {

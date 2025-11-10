@@ -19,11 +19,14 @@ const publicDir = path.resolve(__dirname, '..', 'public');
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
-function setAuthCookie(res, payload) {
+function setAuthCookie(req, res, payload) {
   const token = jwt.sign(payload, jwtSecret, { expiresIn: '7d' });
+  const forwardedProto = (req.headers['x-forwarded-proto'] || '').toString();
+  const proto = forwardedProto || req.protocol || 'http';
   res.cookie('auth', token, {
     httpOnly: true,
     sameSite: 'lax',
+    secure: proto === 'https',
     maxAge: 7 * 24 * 60 * 60 * 1000
   });
 }
@@ -109,7 +112,7 @@ app.get('/auth/callback', async (req, res) => {
     const user = userJson?.data?.[0];
     if (!user) return res.status(404).send('Usuario no encontrado en Twitch');
 
-    setAuthCookie(res, {
+    setAuthCookie(req, res, {
       id: user.id,
       login: user.login,
       display_name: user.display_name,
@@ -135,16 +138,24 @@ app.get('/me', (req, res) => {
 
 app.get('/api/followage', async (req, res) => {
   const viewer = (req.query.touser || req.query.user || req.user?.login || '').toString().trim();
-  const channel = (req.query.channel || req.query.to || '').toString().trim();
+  const defaultChannel = (process.env.TWITCH_CHANNEL_LOGIN || '').toString().trim();
+  const channel = (req.query.channel || req.query.to || defaultChannel).toString().trim();
   const format = (req.query.format || 'text').toString().trim();
   const lang = (req.query.lang || 'es').toString().trim();
   const userToken = req.user?.access_token || null;
 
+  const loginRe = /^[A-Za-z0-9_]{1,32}$/;
   if (!viewer || !channel) {
     return res.status(400).json({
       error: 'Parámetros inválidos',
       message: 'Se requieren "touser" (viewer) y "channel" (broadcaster)'
     });
+  }
+  if (!loginRe.test(viewer)) {
+    return res.status(400).json({ error: 'invalid_user', message: "'user' inválido. Usa A–Z, 0–9 y _." });
+  }
+  if (!loginRe.test(channel)) {
+    return res.status(400).json({ error: 'invalid_channel', message: "'channel' inválido. Usa A–Z, 0–9 y _." });
   }
 
   if (!userToken) {
