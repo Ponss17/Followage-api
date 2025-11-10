@@ -15,6 +15,17 @@ const channelNotice = document.getElementById('channelNotice');
 let isAuthenticated = false;
 let isChannelAuthenticated = false;
 
+function updateFormMode() {
+  if (isChannelAuthenticated) {
+    if (viewerEl) viewerEl.readOnly = false;
+    if (demoNotice) demoNotice.style.display = 'none';
+    if (channelNotice) channelNotice.style.display = 'none';
+  } else {
+    if (viewerEl) viewerEl.readOnly = true;
+    if (!isAuthenticated && demoNotice) demoNotice.style.display = '';
+  }
+}
+
 async function refreshAuth() {
   try {
     const resp = await fetch('/me');
@@ -28,17 +39,16 @@ async function refreshAuth() {
         if (viewerEl && !viewerEl.value) {
           viewerEl.value = data.user.login;
         }
-        if (viewerEl) viewerEl.readOnly = true;
         if (demoNotice) demoNotice.style.display = 'none';
       } else {
         isAuthenticated = false;
         authStatusEl.textContent = 'No autenticado';
         loginBtn.style.display = '';
         logoutBtn.style.display = 'none';
-        if (viewerEl) viewerEl.readOnly = true; // bloqueado hasta iniciar sesión
-        if (demoNotice) demoNotice.style.display = '';
+        // El modo del formulario se ajusta en función del estado del canal.
       }
     }
+    updateFormMode();
   } catch (_) {
     // ignore
   }
@@ -78,6 +88,7 @@ async function refreshChannelAuth() {
         if (channelLogoutBtn) channelLogoutBtn.style.display = 'none';
         if (channelNotice) channelNotice.style.display = '';
       }
+      updateFormMode();
     }
   } catch (_) {}
 }
@@ -100,10 +111,6 @@ refreshChannelAuth();
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  if (!isAuthenticated) {
-    resultEl.textContent = 'Debes iniciar sesión para consultar followage.';
-    return;
-  }
   const viewer = viewerEl.value.trim();
   const channel = channelEl.value.trim();
   const lang = langEl.value;
@@ -115,22 +122,42 @@ form.addEventListener('submit', async (e) => {
 
   resultEl.textContent = 'Consultando...';
   try {
-    const url = new URL('/api/followage', window.location.origin);
-    url.searchParams.set('touser', viewer);
-    url.searchParams.set('channel', channel);
-    url.searchParams.set('lang', lang);
-    url.searchParams.set('format', format);
-    const resp = await fetch(url);
+    let resp;
+    let usedGarret = false;
+    // Intento 1: endpoint estilo Garret (público si el canal está disponible en el servidor)
+    {
+      const url = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, window.location.origin);
+      url.searchParams.set('format', 'ymdhis');
+      url.searchParams.set('ping', 'false');
+      const r = await fetch(url);
+      if (r.ok) {
+        resp = r;
+        usedGarret = true;
+      }
+    }
+    // Intento 2: flujo de usuario si el anterior falla
+    if (!resp) {
+      if (!isAuthenticated) {
+        resultEl.textContent = 'Debes iniciar sesión (usuario) o autenticar el canal para consultar followage.';
+        return;
+      }
+      const url = new URL('/api/followage', window.location.origin);
+      url.searchParams.set('touser', viewer);
+      url.searchParams.set('channel', channel);
+      url.searchParams.set('lang', lang);
+      url.searchParams.set('format', format);
+      resp = await fetch(url);
+    }
     if (!resp.ok) {
       if (resp.status === 401) {
-        resultEl.textContent = 'Error: Debes iniciar sesión para usar esta API.';
+        resultEl.textContent = 'Error: Debes iniciar sesión (usuario o canal) para usar esta API.';
       } else {
         const err = await resp.json().catch(() => ({ message: 'Error desconocido' }));
         resultEl.textContent = `Error: ${err.message || resp.status}`;
       }
       return;
     }
-    if (format === 'json') {
+    if (!usedGarret && format === 'json') {
       const json = await resp.json();
       resultEl.textContent = JSON.stringify(json, null, 2);
     } else {

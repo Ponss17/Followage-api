@@ -9,6 +9,8 @@ import { getFollowageText, getFollowageJson, getFollowageTextByPattern } from '.
 dotenv.config();
 
 const app = express();
+// In-memory store for channel tokens to enable multi-channel public queries
+const channelTokens = new Map(); // key: channel_login (lowercase), value: { access_token, channel_login, display_name, channel_id, token_obtained_at, token_expires_in }
 const port = process.env.PORT || 3000;
 const jwtSecret = process.env.JWT_SECRET || 'dev_jwt_secret';
 app.set('trust proxy', 1);
@@ -201,6 +203,15 @@ app.get('/auth/channel/callback', async (req, res) => {
       token_expires_in: tokenJson.expires_in,
       scope: 'moderator:read:followers'
     });
+    // Persist token in memory so visitors without cookie can query this channel
+    channelTokens.set(user.login.toLowerCase(), {
+      access_token: accessToken,
+      channel_login: user.login,
+      display_name: user.display_name,
+      channel_id: user.id,
+      token_obtained_at: Date.now(),
+      token_expires_in: tokenJson.expires_in
+    });
     res.redirect('/');
   } catch (err) {
     res.status(500).send(err?.message || 'Error en callback de OAuth (channel)');
@@ -213,6 +224,16 @@ app.post('/auth/logout', (_req, res) => {
 });
 
 app.post('/auth/channel/logout', (_req, res) => {
+  // If there is a channel cookie, also remove from memory store
+  try {
+    const cookie = _req.cookies?.channel_auth;
+    if (cookie) {
+      const data = JSON.parse(cookie);
+      if (data?.channel_login) {
+        channelTokens.delete(String(data.channel_login).toLowerCase());
+      }
+    }
+  } catch (_) {}
   res.clearCookie('channel_auth');
   res.json({ ok: true });
 });
@@ -280,12 +301,17 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
     return res.status(400).send('invalid parameters');
   }
 
-  // Prefiere token del canal autenticado vía cookie; si no, usa env
+  // Resolve token prioritizing: cookie for matching channel, then in-memory store, then env fallback
   let channelToken = null;
   let allowedChannel = null;
-  if (req.channel?.access_token && req.channel?.channel_login) {
+  const streamerLower = streamer.toLowerCase();
+  if (req.channel?.access_token && req.channel?.channel_login && req.channel.channel_login.toLowerCase() === streamerLower) {
     channelToken = req.channel.access_token;
     allowedChannel = req.channel.channel_login;
+  } else if (channelTokens.has(streamerLower)) {
+    const item = channelTokens.get(streamerLower);
+    channelToken = item?.access_token || null;
+    allowedChannel = item?.channel_login || null;
   } else if (process.env.TWITCH_CHANNEL_TOKEN) {
     channelToken = process.env.TWITCH_CHANNEL_TOKEN;
     allowedChannel = (process.env.TWITCH_CHANNEL_LOGIN || '').toString().trim();
@@ -293,7 +319,7 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
   if (!channelToken) {
     return res.status(401).send('channel token not configured');
   }
-  if (allowedChannel && allowedChannel.toLowerCase() !== streamer.toLowerCase()) {
+  if (allowedChannel && allowedChannel.toLowerCase() !== streamerLower) {
     return res.status(400).send('unsupported channel');
   }
 

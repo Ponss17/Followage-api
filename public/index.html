@@ -35,17 +35,17 @@
       <section id="demo" class="card">
         <h2>Demo rápida</h2>
         <p id="demoNotice" class="notice" style="display:none">
-          Debes iniciar sesión con Twitch para usar la demo. El campo <code>Usuario</code> usa tu sesión.
+          Modo usuario: inicia sesión con Twitch para usar tu cuenta como <code>Usuario</code>.
         </p>
         <p id="channelNotice" class="notice" style="display:none">
-          Para usar el endpoint estilo Garret, inicia sesión con el canal o un moderador para obtener el token con permisos.
+          Si un canal/moderador inicia sesión aquí, su canal queda disponible públicamente en este servidor: cualquiera podrá consultar su followage usando el endpoint estilo Garret.
         </p>
         <form id="followage-form">
           <div class="grid">
             <label>
               Usuario (touser)
-              <input type="text" id="viewer" placeholder="Se completará tras iniciar sesión" required />
-              <small class="hint">Se usa tu usuario autenticado. Para probar otro, inicia sesión con ese usuario.</small>
+              <input type="text" id="viewer" placeholder="Ingresa el usuario o se completará tras login" required />
+              <small class="hint">Si el canal/moderador está autenticado, puedes consultar cualquier usuario sin login de usuario.</small>
             </label>
             <label>
               Canal (channel)
@@ -86,7 +86,7 @@
           <li>Salud del servicio: <code>/health</code>.</li>
           <li>El campo <code>Usuario</code> se completa con tu sesión y se bloquea.</li>
         </ol>
-        <p class="muted">Para probar otro usuario, inicia sesión con esa cuenta de Twitch.</p>
+        <p class="muted">Modo público: si el canal/moderador está autenticado, puedes consultar cualquier usuario sin iniciar sesión de usuario.</p>
       </section>
 
       <section class="card muted">
