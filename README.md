@@ -44,10 +44,11 @@ API sencilla para consultar cuánto tiempo lleva un usuario siguiendo a un canal
 ## Endpoints
 
 - `GET /api/followage?touser=<viewer>&channel=<channel>&format=text|json&lang=es|en`
-  - `touser` (alias: `user`): usuario que potencialmente sigue
-  - `channel` (alias: `to`): canal a verificar
-  - `format`: `text` (default) o `json`
-  - `lang`: `es` (default) o `en`
+  - Requiere sesión de usuario.
+  - `touser` (alias: `user`): usuario a comprobar.
+  - `channel` (alias: `to`): canal a verificar.
+  - `format`: `text` (default) o `json`.
+  - `lang`: `es` (default) o `en`.
 
   Ejemplos:
 
@@ -56,7 +57,25 @@ API sencilla para consultar cuánto tiempo lleva un usuario siguiendo a un canal
   - JSON:
     - `http://localhost:3000/api/followage?touser=usuario&channel=canal&format=json`
 
-- `GET /twitch/followage/:viewer/:channel?lang=es|en`
+- `GET /twitch/followage/{Streamer}/{Viewer}?format=ymdhis&ping=true|false&moderatorId=ID`
+  - Estilo Garret; consultas públicas si hay token de canal/moderador disponible en el servidor.
+  - `Streamer`: login del canal.
+  - `Viewer`: login del usuario.
+  - `format`: patrón `ymdhis` (por defecto) para años/meses/días/horas/minutos/segundos.
+  - `ping`: `true|false` para incluir menciones en el texto.
+  - `moderatorId`: opcional, id del moderador cuyo token usar (si existe en el servidor).
+
+  Ejemplo:
+  - `http://localhost:3000/twitch/followage/ponss17/testviewer?format=ymdhis&ping=false`
+
+- `GET /twitch/chatter/{Streamer}?bots=true|false&count=1..10&moderatorId=ID`
+  - Devuelve uno o varios chatters aleatorios desde el canal usando TMI.
+  - `bots`: incluir o excluir bots conocidos (default `false`).
+  - `count`: cantidad a devolver (1..10, default `1`).
+  - `moderatorId`: aceptado pero no requerido para este endpoint.
+
+  Ejemplo:
+  - `http://localhost:3000/twitch/chatter/ponss17?bots=false&count=1`
 
 ## Autenticación
 
@@ -65,7 +84,14 @@ API sencilla para consultar cuánto tiempo lleva un usuario siguiendo a un canal
 - `GET /me`: devuelve `{ authenticated, user }`.
 - `POST /auth/logout`: limpia la sesión.
 
+- `GET /auth/channel/login`: login de canal/moderador con `moderator:read:followers`.
+- `GET /auth/channel/callback`: guarda cookie y habilita el canal/moderador en el servidor.
+- `GET /channel/me`: devuelve `{ authenticated, channel }`.
+- `POST /auth/channel/logout`: limpia la cookie y deshabilita el token en el servidor.
+
 Si estás autenticado, `GET /api/followage` usa tu `login` como `viewer` por defecto, así puedes omitir `touser`/`user`.
+
+Para uso público estilo Garret, basta con que el dueño del canal o un moderador haga login de canal/moderador una vez; a partir de ahí, cualquier visitante puede consultar `GET /twitch/followage/{Streamer}/{Viewer}` sin sesión.
 
 ## Respuesta JSON
 

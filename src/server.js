@@ -9,8 +9,9 @@ import { getFollowageText, getFollowageJson, getFollowageTextByPattern } from '.
 dotenv.config();
 
 const app = express();
-// In-memory store for channel tokens to enable multi-channel public queries
-const channelTokens = new Map(); // key: channel_login (lowercase), value: { access_token, channel_login, display_name, channel_id, token_obtained_at, token_expires_in }
+// In-memory store for channel/moderator tokens to enable multi-channel public queries
+// key: login (lowercase), value: { access_token, channel_login, display_name, channel_id, token_obtained_at, token_expires_in }
+const channelTokens = new Map();
 const port = process.env.PORT || 3000;
 const jwtSecret = process.env.JWT_SECRET || 'dev_jwt_secret';
 app.set('trust proxy', 1);
@@ -203,7 +204,7 @@ app.get('/auth/channel/callback', async (req, res) => {
       token_expires_in: tokenJson.expires_in,
       scope: 'moderator:read:followers'
     });
-    // Persist token in memory so visitors without cookie can query this channel
+    // Persist token in memory for public queries; may be channel owner or moderator
     channelTokens.set(user.login.toLowerCase(), {
       access_token: accessToken,
       channel_login: user.login,
@@ -301,26 +302,45 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
     return res.status(400).send('invalid parameters');
   }
 
-  // Resolve token prioritizing: cookie for matching channel, then in-memory store, then env fallback
+  // Resolve token prioritizing:
+  // 1) moderatorId from cookie/store if provided; 2) cookie token; 3) owner token in store; 4) any token in store; 5) env fallback
   let channelToken = null;
-  let allowedChannel = null;
   const streamerLower = streamer.toLowerCase();
-  if (req.channel?.access_token && req.channel?.channel_login && req.channel.channel_login.toLowerCase() === streamerLower) {
+  const modId = (req.query.moderatorId || '').toString().trim();
+
+  // Try moderatorId from cookie
+  if (modId && req.channel?.access_token && String(req.channel.channel_id) === modId) {
     channelToken = req.channel.access_token;
-    allowedChannel = req.channel.channel_login;
-  } else if (channelTokens.has(streamerLower)) {
+  }
+  // Try moderatorId from store
+  if (!channelToken && modId) {
+    for (const item of channelTokens.values()) {
+      if (String(item.channel_id) === modId) {
+        channelToken = item.access_token;
+        break;
+      }
+    }
+  }
+  // Cookie token (any channel/moderator)
+  if (!channelToken && req.channel?.access_token) {
+    channelToken = req.channel.access_token;
+  }
+  // Owner token in store (login equals streamer)
+  if (!channelToken && channelTokens.has(streamerLower)) {
     const item = channelTokens.get(streamerLower);
     channelToken = item?.access_token || null;
-    allowedChannel = item?.channel_login || null;
-  } else if (process.env.TWITCH_CHANNEL_TOKEN) {
+  }
+  // Any token in store
+  if (!channelToken) {
+    const any = channelTokens.values().next().value;
+    if (any?.access_token) channelToken = any.access_token;
+  }
+  // Env fallback
+  if (!channelToken && process.env.TWITCH_CHANNEL_TOKEN) {
     channelToken = process.env.TWITCH_CHANNEL_TOKEN;
-    allowedChannel = (process.env.TWITCH_CHANNEL_LOGIN || '').toString().trim();
   }
   if (!channelToken) {
     return res.status(401).send('channel token not configured');
-  }
-  if (allowedChannel && allowedChannel.toLowerCase() !== streamerLower) {
-    return res.status(400).send('unsupported channel');
   }
 
   try {
@@ -330,6 +350,47 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
   } catch (err) {
     const status = err?.statusCode || 500;
     return res.status(status).send('error');
+  }
+});
+
+// Random Chatters: /twitch/chatter/{StreamerUsername}?bots=true|false&count=1..10&moderatorId=ID
+app.get('/twitch/chatter/:streamer', async (req, res) => {
+  const streamer = req.params.streamer?.toString().trim();
+  const bots = ((req.query.bots || 'false').toString().trim().toLowerCase() === 'true');
+  const count = Math.max(1, Math.min(10, parseInt(req.query.count || '1', 10) || 1));
+  const loginRe = /^[A-Za-z0-9_]{1,32}$/;
+  if (!loginRe.test(streamer)) {
+    return res.status(400).send('invalid parameters');
+  }
+  try {
+    const url = new URL(`https://tmi.twitch.tv/group/user/${encodeURIComponent(streamer)}/chatters`);
+    const resp = await fetch(url);
+    if (!resp.ok) {
+      return res.status(502).send('error fetching chatters');
+    }
+    const data = await resp.json();
+    const cats = data?.chatters || {};
+    let arr = [];
+    for (const key of Object.keys(cats)) {
+      const list = Array.isArray(cats[key]) ? cats[key] : [];
+      arr = arr.concat(list);
+    }
+    const knownBots = new Set(['nightbot','streamelements','moobot','wizebot','fossabot','coebot','streamlabs','deepbot','anotherttvviewer','supibot']);
+    if (!bots) {
+      arr = arr.filter((u) => !knownBots.has(String(u).toLowerCase()));
+    }
+    if (arr.length === 0) {
+      return res.type('text/plain').send('no chatters');
+    }
+    const picks = [];
+    for (let i = 0; i < count && arr.length > 0; i++) {
+      const idx = Math.floor(Math.random() * arr.length);
+      picks.push(arr[idx]);
+      arr.splice(idx, 1);
+    }
+    res.type('text/plain').send(picks.join('\n'));
+  } catch (err) {
+    res.status(500).send('error');
   }
 });
 
