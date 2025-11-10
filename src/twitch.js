@@ -35,8 +35,8 @@ async function getAppAccessToken() {
   return cachedToken;
 }
 
-async function twitchFetch(path, params = {}) {
-  const token = await getAppAccessToken();
+async function twitchFetch(path, params = {}, tokenOverride = null) {
+  const token = tokenOverride || await getAppAccessToken();
   const clientId = process.env.TWITCH_CLIENT_ID;
   const url = new URL(`https://api.twitch.tv/helix/${path}`);
   for (const [k, v] of Object.entries(params)) {
@@ -63,13 +63,19 @@ export async function getUserByLogin(login) {
   return data.data[0];
 }
 
-export async function getFollowRecord(fromId, toId) {
-  const data = await twitchFetch('users/follows', { from_id: fromId, to_id: toId });
+export async function getFollowRecord(fromId, toId, userToken) {
+  // Nuevo endpoint: channels/followed requiere token de usuario con scope user:read:follows
+  if (!userToken) {
+    const err = new Error('Se requiere autenticación del usuario para consultar followage');
+    err.statusCode = 401;
+    throw err;
+  }
+  const data = await twitchFetch('channels/followed', { user_id: fromId, broadcaster_id: toId }, userToken);
   if (!data?.data?.length) return null;
   return data.data[0];
 }
 
-export async function getFollowageJson({ viewer, channel }) {
+export async function getFollowageJson({ viewer, channel, userToken }) {
   const viewerUser = await getUserByLogin(viewer);
   const channelUser = await getUserByLogin(channel);
   if (!viewerUser) {
@@ -82,7 +88,7 @@ export async function getFollowageJson({ viewer, channel }) {
     err.statusCode = 404;
     throw err;
   }
-  const follow = await getFollowRecord(viewerUser.id, channelUser.id);
+  const follow = await getFollowRecord(viewerUser.id, channelUser.id, userToken);
   if (!follow) {
     return {
       viewer: viewerUser.login,
@@ -101,7 +107,7 @@ export async function getFollowageJson({ viewer, channel }) {
   };
 }
 
-export async function getFollowageText({ viewer, channel, lang = 'es' }) {
-  const json = await getFollowageJson({ viewer, channel });
+export async function getFollowageText({ viewer, channel, lang = 'es', userToken }) {
+  const json = await getFollowageJson({ viewer, channel, userToken });
   return formatFollowageText(json, lang);
 }

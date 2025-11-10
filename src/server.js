@@ -69,7 +69,7 @@ app.get('/auth/login', (req, res) => {
   authUrl.searchParams.set('client_id', clientId);
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req));
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'user:read:email');
+  authUrl.searchParams.set('scope', 'user:read:email user:read:follows');
   res.redirect(authUrl.toString());
 });
 
@@ -112,7 +112,10 @@ app.get('/auth/callback', async (req, res) => {
     setAuthCookie(res, {
       id: user.id,
       login: user.login,
-      display_name: user.display_name
+      display_name: user.display_name,
+      access_token: accessToken,
+      token_obtained_at: Date.now(),
+      token_expires_in: tokenJson.expires_in
     });
     res.redirect('/');
   } catch (err) {
@@ -135,6 +138,7 @@ app.get('/api/followage', async (req, res) => {
   const channel = (req.query.channel || req.query.to || '').toString().trim();
   const format = (req.query.format || 'text').toString().trim();
   const lang = (req.query.lang || 'es').toString().trim();
+  const userToken = req.user?.access_token || null;
 
   if (!viewer || !channel) {
     return res.status(400).json({
@@ -143,12 +147,16 @@ app.get('/api/followage', async (req, res) => {
     });
   }
 
+  if (!userToken) {
+    return res.status(401).json({ error: 'auth_required', message: 'Inicia sesión para consultar followage' });
+  }
+
   try {
     if (format === 'json') {
-      const data = await getFollowageJson({ viewer, channel });
+      const data = await getFollowageJson({ viewer, channel, userToken });
       return res.json(data);
     } else {
-      const text = await getFollowageText({ viewer, channel, lang });
+      const text = await getFollowageText({ viewer, channel, lang, userToken });
       return res.send(text);
     }
   } catch (err) {
