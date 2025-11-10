@@ -11,7 +11,7 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 const jwtSecret = process.env.JWT_SECRET || 'dev_jwt_secret';
-const oauthRedirect = process.env.OAUTH_REDIRECT_URI || `http://localhost:${port}/auth/callback`;
+app.set('trust proxy', 1);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const publicDir = path.resolve(__dirname, '..', 'public');
@@ -28,13 +28,24 @@ function setAuthCookie(res, payload) {
   });
 }
 
+function getRedirectUri(req) {
+  const envRedirect = process.env.OAUTH_REDIRECT_URI;
+  if (envRedirect && envRedirect.trim()) return envRedirect.trim();
+
+  const forwardedProto = (req.headers['x-forwarded-proto'] || '').toString();
+  const forwardedHost = (req.headers['x-forwarded-host'] || '').toString();
+  const host = forwardedHost || req.headers['host'];
+  const proto = forwardedProto || req.protocol || 'http';
+  if (host) return `${proto}://${host}/auth/callback`;
+  return `http://localhost:${port}/auth/callback`;
+}
+
 function readAuth(req, _res, next) {
   const token = req.cookies?.auth;
   if (token) {
     try {
       req.user = jwt.verify(token, jwtSecret);
     } catch (_) {
-      // ignore invalid token
     }
   }
   next();
@@ -46,18 +57,17 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok' });
 });
 
-// Static landing page and assets
 app.use(express.static(publicDir));
 app.get('/', (_req, res) => {
   res.sendFile(path.join(publicDir, 'index.html'));
 });
 
 // --- OAuth login with Twitch ---
-app.get('/auth/login', (_req, res) => {
+app.get('/auth/login', (req, res) => {
   const clientId = process.env.TWITCH_CLIENT_ID;
   const authUrl = new URL('https://id.twitch.tv/oauth2/authorize');
   authUrl.searchParams.set('client_id', clientId);
-  authUrl.searchParams.set('redirect_uri', oauthRedirect);
+  authUrl.searchParams.set('redirect_uri', getRedirectUri(req));
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('scope', 'user:read:email');
   res.redirect(authUrl.toString());
@@ -74,7 +84,7 @@ app.get('/auth/callback', async (req, res) => {
     tokenUrl.searchParams.set('client_id', clientId);
     tokenUrl.searchParams.set('client_secret', clientSecret);
     tokenUrl.searchParams.set('grant_type', 'authorization_code');
-    tokenUrl.searchParams.set('redirect_uri', oauthRedirect);
+    tokenUrl.searchParams.set('redirect_uri', getRedirectUri(req));
     tokenUrl.searchParams.set('code', code);
 
     const tokenResp = await fetch(tokenUrl, { method: 'POST' });
