@@ -52,6 +52,7 @@ main { padding: 8px 0 40px; }
   word-break: break-word;
 }
 .card h2 { margin-top: 0; }
+.card h3 { margin-top: 0; margin-bottom: 8px; }
 .card.muted { opacity: 0.9; }
 
 .card pre {
@@ -63,6 +64,17 @@ main { padding: 8px 0 40px; }
   overflow-wrap: anywhere;
 }
 
+/* Auth boxes */
+.auth-box {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+.auth-box span { color: var(--muted); }
+
 form label { display: block; color: var(--muted); font-size: 14px; margin-bottom: 8px; }
 input, select {
   width: 100%;
@@ -71,6 +83,15 @@ input, select {
   border: 1px solid var(--border);
   background: #0f1325;
   color: var(--text);
+}
+
+/* Tips y avisos */
+.hint { font-size: 12px; color: var(--muted); }
+.notice {
+  background: rgba(124,108,255,0.10);
+  border: 1px solid rgba(124,108,255,0.35);
+  padding: 10px;
+  border-radius: 10px;
 }
 
 .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }

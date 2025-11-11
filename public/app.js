@@ -153,6 +153,8 @@ updateUrlLabels();
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
+  // Asegura que las etiquetas de URL estén en el idioma seleccionado
+  updateUrlLabels();
   const viewer = viewerEl.value.trim();
   const channel = channelEl.value.trim();
   const lang = langEl.value;
