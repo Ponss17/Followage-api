@@ -130,14 +130,24 @@ form.addEventListener('submit', async (e) => {
     let usedGarret = false;
     let garretUrlForDisplay;
     {
-      const url = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, window.location.origin);
-      url.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
-      url.searchParams.set('ping', 'false');
-      url.searchParams.set('lang', lang);
-      if (moderatorId) url.searchParams.set('moderatorId', moderatorId);
-      if (channelToken) url.searchParams.set('token', channelToken);
-      garretUrlForDisplay = url.toString();
-      const r = await fetch(url);
+      // URL de producción para mostrar (copiable)
+      const displayBase = 'https://followage-api.onrender.com';
+      const displayUrl = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, displayBase);
+      displayUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
+      displayUrl.searchParams.set('ping', 'false');
+      displayUrl.searchParams.set('lang', lang);
+      if (moderatorId) displayUrl.searchParams.set('moderatorId', moderatorId);
+      if (channelToken) displayUrl.searchParams.set('token', channelToken);
+      garretUrlForDisplay = displayUrl.toString();
+
+      // URL local para consultar (evita CORS en desarrollo)
+      const fetchUrl = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, window.location.origin);
+      fetchUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
+      fetchUrl.searchParams.set('ping', 'false');
+      fetchUrl.searchParams.set('lang', lang);
+      if (moderatorId) fetchUrl.searchParams.set('moderatorId', moderatorId);
+      if (channelToken) fetchUrl.searchParams.set('token', channelToken);
+      const r = await fetch(fetchUrl);
       if (r.ok) {
         resp = r;
         usedGarret = true;
