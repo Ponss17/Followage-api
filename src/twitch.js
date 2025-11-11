@@ -64,8 +64,6 @@ export async function getUserByLogin(login) {
 }
 
 export async function getFollowRecord(fromId, toId, userToken) {
-  // channels/followed: lista los canales que el usuario (fromId) sigue
-  // No admite filtro directo por broadcaster_id; iteramos hasta encontrar coincidencia
   if (!userToken) {
     const err = new Error('Se requiere autenticación del usuario para consultar followage');
     err.statusCode = 401;
@@ -128,9 +126,10 @@ export async function getFollowageJsonByFollowers({ viewer, channel, channelToke
   };
 }
 
-export async function getFollowageTextByPattern({ viewer, channel, pattern = 'ymdhis', ping = false, channelToken }) {
+export async function getFollowageTextByPattern({ viewer, channel, pattern = 'ymdhis', ping = false, channelToken, lang = 'en' }) {
   const json = await getFollowageJsonByFollowers({ viewer, channel, channelToken });
-  if (!json.following) return ping ? `@${channel} @${viewer} not following` : 'not following';
+  const notFollowingText = lang === 'es' ? 'no sigue' : 'not following';
+  if (!json.following) return ping ? `@${channel} @${viewer} ${notFollowingText}` : notFollowingText;
   const formatted = formatByPattern(json.duration, pattern);
   return ping ? `@${channel} @${viewer} ${formatted}` : formatted;
 }
