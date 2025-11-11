@@ -72,12 +72,12 @@
             <label>
               Moderator ID (opcional)
               <input type="text" id="moderatorId" placeholder="ID de moderador (numérico)" />
-              <small class="hint">Útil si prefieres seleccionar el token cacheado por ID. No evita la memoria.</small>
+              <small class="hint">Se completa automáticamente tras iniciar sesión Canal/Moderador; opcional.</small>
             </label>
             <label>
               Token del canal/moderador (opcional)
               <input type="text" id="channelToken" placeholder="Pegue aquí el OAuth del mod" />
-              <small class="hint">Usa scope <code>moderator:read:followers</code>. Pasarlo en la URL evita depender de memoria/env.</small>
+              <small class="hint">Se completa automáticamente tras iniciar sesión Canal/Moderador; opcional. Usa scope <code>moderator:read:followers</code>.</small>
             </label>
           </div>
           <button class="btn" type="submit">Consultar</button>
@@ -106,21 +106,23 @@
 
         <hr />
         <h3>Command APIs</h3>
-        <p>Patrón de URL compatible con Nightbot y otros bots:</p>
+        <p>Patrón de URL público (compatible con Nightbot y otros bots):</p>
         <pre><code>GET /twitch/followage/{StreamerUsername}/{ViewerUsername}?format=ymdhis|json&ping=true|false&moderatorId={ModeratorId}&lang=es|en&token={OAuthMod}</code></pre>
         <ul>
-          <li><code>StreamerUsername</code>: login del canal.</li>
-          <li><code>ViewerUsername</code>: login del usuario.</li>
+          <li><code>StreamerUsername</code>: login del canal (broadcaster).</li>
+          <li><code>ViewerUsername</code>: login del usuario (viewer).</li>
           <li><code>format</code>: <code>ymdhis</code> (por defecto) o <code>json</code>.</li>
-          <li><code>ping</code>: añade menciones en texto (<code>true|false</code>).</li>
-          <li><code>moderatorId</code>: opcional, id del moderador para seleccionar token cacheado si existe.</li>
-          <li><code>lang</code>: <code>es</code> o <code>en</code>.</li>
-          <li><code>token</code>: opcional; OAuth del canal/mod con <code>moderator:read:followers</code>. Si lo pasas, no dependes de memoria/cookies/env.</li>
+          <li><code>ping</code>: añade menciones en la respuesta de texto (<code>true|false</code>).</li>
+          <li><code>moderatorId</code> (opcional): id del moderador/canal para seleccionar el token cacheado si existe. Si has iniciado sesión Canal/Moderador aquí, generalmente no es necesario.</li>
+          <li><code>lang</code>: <code>es</code> (por defecto en texto) o <code>en</code>.</li>
+          <li><code>token</code> (opcional): OAuth del canal/mod con scope <code>moderator:read:followers</code>. Si has iniciado sesión Canal/Moderador en este servidor, no es necesario pasarlo.</li>
         </ul>
         <p>Ejemplos Nightbot (producción):</p>
+        <pre><code>!commands add -ul=everyone !followage $(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es)</code></pre>
+        <pre><code>!commands add -ul=everyone !followage $(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(touser)?format=json&lang=en&ping=true)</code></pre>
+        <p>Si prefieres usar un token dedicado (sin depender de la sesión del servidor):</p>
         <pre><code>!commands add -ul=everyone !followage $(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es&token=OAUTH_DEL_MOD)</code></pre>
-        <pre><code>!commands add -ul=everyone !followage $(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(touser)?format=json&lang=en&ping=true&token=OAUTH_DEL_MOD)</code></pre>
-        <p class="muted">Aviso: incluir <code>token</code> en la URL lo expone a quien vea el comando; usa un token dedicado/rotatorio para el bot.</p>
+        <p class="muted">Aviso: incluir <code>token</code> en la URL lo expone a quien vea el comando. Usa un token dedicado/rotatorio para el bot y revócalo si es necesario.</p>
       </section>
 
       <section class="card muted">

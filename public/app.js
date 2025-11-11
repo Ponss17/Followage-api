@@ -83,6 +83,18 @@ async function refreshChannelAuth() {
         if (channelLoginBtn) channelLoginBtn.style.display = 'none';
         if (channelLogoutBtn) channelLogoutBtn.style.display = '';
         if (channelNotice) channelNotice.style.display = 'none';
+        // Autocompletar Moderator ID y token desde la sesión de canal/mod
+        try {
+          const ch = data.channel || {};
+          const chId = ch.channel_id != null ? String(ch.channel_id) : '';
+          const chToken = ch.access_token || '';
+          if (moderatorIdEl && !moderatorIdEl.value && chId) {
+            moderatorIdEl.value = chId;
+          }
+          if (channelTokenEl && !channelTokenEl.value && chToken) {
+            channelTokenEl.value = chToken;
+          }
+        } catch (_) {}
       } else {
         isChannelAuthenticated = false;
         if (channelAuthStatusEl) channelAuthStatusEl.textContent = 'Canal no autenticado';
