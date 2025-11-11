@@ -6,6 +6,10 @@ const formatEl = document.getElementById('format');
 const resultEl = document.getElementById('result');
 const urlBlockEl = document.getElementById('url-block');
 const urlExampleEl = document.getElementById('urlExample');
+const urlGenericBlockEl = document.getElementById('url-generic-block');
+const urlGenericExampleEl = document.getElementById('urlGenericExample');
+const urlPersonalLabelEl = document.getElementById('urlPersonalLabel');
+const urlGenericLabelEl = document.getElementById('urlGenericLabel');
 const authStatusEl = document.getElementById('authStatus');
 const loginBtn = document.getElementById('loginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
@@ -18,6 +22,24 @@ const moderatorIdEl = document.getElementById('moderatorId');
 const channelTokenEl = document.getElementById('channelToken');
 let isAuthenticated = false;
 let isChannelAuthenticated = false;
+
+const i18n = {
+  es: {
+    urlPersonal: 'URL personalizada:',
+    urlGeneric: 'URL genérica (Nightbot):'
+  },
+  en: {
+    urlPersonal: 'Personalized URL:',
+    urlGeneric: 'Generic URL (Nightbot):'
+  }
+};
+
+function updateUrlLabels() {
+  const lang = (langEl?.value || 'es');
+  const dict = i18n[lang] || i18n.es;
+  if (urlPersonalLabelEl) urlPersonalLabelEl.textContent = dict.urlPersonal;
+  if (urlGenericLabelEl) urlGenericLabelEl.textContent = dict.urlGeneric;
+}
 
 function updateFormMode() {
   if (isChannelAuthenticated) {
@@ -123,6 +145,12 @@ if (channelLogoutBtn) {
 
 refreshChannelAuth();
 
+// Cambiar etiquetas cuando cambia el idioma
+if (langEl) {
+  langEl.addEventListener('change', updateUrlLabels);
+}
+updateUrlLabels();
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const viewer = viewerEl.value.trim();
@@ -141,6 +169,7 @@ form.addEventListener('submit', async (e) => {
     let resp;
     let usedGarret = false;
     let garretUrlForDisplay;
+    let genericUrlForDisplay;
     {
       // URL de producción para mostrar (copiable)
       const displayBase = 'https://followage-api.onrender.com';
@@ -151,6 +180,16 @@ form.addEventListener('submit', async (e) => {
       if (moderatorId) displayUrl.searchParams.set('moderatorId', moderatorId);
       if (channelToken) displayUrl.searchParams.set('token', channelToken);
       garretUrlForDisplay = displayUrl.toString();
+
+      // URL genérica para Nightbot (placeholders)
+      const genericBase = 'https://followage-api.onrender.com';
+      const genericUrl = new URL(`/twitch/followage/$(channel)/$(user)`, genericBase);
+      genericUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
+      genericUrl.searchParams.set('ping', 'false');
+      genericUrl.searchParams.set('lang', lang);
+      if (moderatorId) genericUrl.searchParams.set('moderatorId', moderatorId);
+      if (channelToken) genericUrl.searchParams.set('token', channelToken);
+      genericUrlForDisplay = genericUrl.toString();
 
       // URL local para consultar (evita CORS en desarrollo)
       const fetchUrl = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, window.location.origin);
@@ -197,6 +236,10 @@ form.addEventListener('submit', async (e) => {
     if (urlBlockEl && urlExampleEl && garretUrlForDisplay) {
       urlExampleEl.textContent = garretUrlForDisplay;
       urlBlockEl.style.display = '';
+    }
+    if (urlGenericBlockEl && urlGenericExampleEl && genericUrlForDisplay) {
+      urlGenericExampleEl.textContent = genericUrlForDisplay;
+      urlGenericBlockEl.style.display = '';
     }
   } catch (err) {
     resultEl.textContent = `Error: ${err.message || err}`;

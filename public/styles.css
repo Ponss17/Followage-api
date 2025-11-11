@@ -48,14 +48,12 @@ main { padding: 8px 0 40px; }
   border-radius: 16px;
   padding: 20px;
   margin: 16px 0;
-  /* Evita que el contenido se desborde horizontalmente */
   overflow-wrap: anywhere;
   word-break: break-word;
 }
 .card h2 { margin-top: 0; }
 .card.muted { opacity: 0.9; }
 
-/* Mantener pre/code dentro de la tarjeta sin salirse */
 .card pre {
   overflow-x: auto;
   white-space: pre-wrap;
@@ -85,7 +83,6 @@ input, select {
   border: 1px dashed var(--border);
   background: #0f1325;
   min-height: 44px;
-  /* Evita desbordes cuando el resultado es texto largo o JSON */
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: anywhere;
