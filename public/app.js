@@ -4,6 +4,8 @@ const channelEl = document.getElementById('channel');
 const langEl = document.getElementById('lang');
 const formatEl = document.getElementById('format');
 const resultEl = document.getElementById('result');
+const urlBlockEl = document.getElementById('url-block');
+const urlExampleEl = document.getElementById('urlExample');
 const authStatusEl = document.getElementById('authStatus');
 const loginBtn = document.getElementById('loginBtn');
 const logoutBtn = document.getElementById('logoutBtn');
@@ -122,11 +124,13 @@ form.addEventListener('submit', async (e) => {
   try {
     let resp;
     let usedGarret = false;
+    let garretUrlForDisplay;
     {
       const url = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, window.location.origin);
       url.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
       url.searchParams.set('ping', 'false');
       url.searchParams.set('lang', lang);
+      garretUrlForDisplay = url.toString();
       const r = await fetch(url);
       if (r.ok) {
         resp = r;
@@ -160,6 +164,11 @@ form.addEventListener('submit', async (e) => {
     } else {
       const text = await resp.text();
       resultEl.textContent = text;
+    }
+
+    if (urlBlockEl && urlExampleEl && garretUrlForDisplay) {
+      urlExampleEl.textContent = garretUrlForDisplay;
+      urlBlockEl.style.display = '';
     }
   } catch (err) {
     resultEl.textContent = `Error: ${err.message || err}`;
