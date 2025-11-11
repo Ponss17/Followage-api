@@ -103,6 +103,24 @@
           <li>El campo <code>Usuario</code> se completa con tu sesión y se bloquea.</li>
         </ol>
         <p class="muted">Modo público: si el canal/moderador está autenticado, puedes consultar cualquier usuario sin iniciar sesión de usuario.</p>
+
+        <hr />
+        <h3>Chatbot Command APIs (estilo Garret)</h3>
+        <p>Patrón de URL compatible con Nightbot y otros bots:</p>
+        <pre><code>GET /twitch/followage/{StreamerUsername}/{ViewerUsername}?format=ymdhis|json&ping=true|false&moderatorId={ModeratorId}&lang=es|en&token={OAuthMod}</code></pre>
+        <ul>
+          <li><code>StreamerUsername</code>: login del canal.</li>
+          <li><code>ViewerUsername</code>: login del usuario.</li>
+          <li><code>format</code>: <code>ymdhis</code> (por defecto) o <code>json</code>.</li>
+          <li><code>ping</code>: añade menciones en texto (<code>true|false</code>).</li>
+          <li><code>moderatorId</code>: opcional, id del moderador para seleccionar token cacheado si existe.</li>
+          <li><code>lang</code>: <code>es</code> o <code>en</code>.</li>
+          <li><code>token</code>: opcional; OAuth del canal/mod con <code>moderator:read:followers</code>. Si lo pasas, no dependes de memoria/cookies/env.</li>
+        </ul>
+        <p>Ejemplos Nightbot (producción):</p>
+        <pre><code>!commands add -ul=everyone !followage $(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es&token=OAUTH_DEL_MOD)</code></pre>
+        <pre><code>!commands add -ul=everyone !followage $(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(touser)?format=json&lang=en&ping=true&token=OAUTH_DEL_MOD)</code></pre>
+        <p class="muted">Aviso: incluir <code>token</code> en la URL lo expone a quien vea el comando; usa un token dedicado/rotatorio para el bot.</p>
       </section>
 
       <section class="card muted">
