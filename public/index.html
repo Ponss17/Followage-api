@@ -68,6 +68,18 @@
               </select>
             </label>
           </div>
+          <div class="grid">
+            <label>
+              Moderator ID (opcional)
+              <input type="text" id="moderatorId" placeholder="ID de moderador (numérico)" />
+              <small class="hint">Útil si prefieres seleccionar el token cacheado por ID. No evita la memoria.</small>
+            </label>
+            <label>
+              Token del canal/moderador (opcional)
+              <input type="text" id="channelToken" placeholder="Pegue aquí el OAuth del mod" />
+              <small class="hint">Usa scope <code>moderator:read:followers</code>. Pasarlo en la URL evita depender de memoria/env.</small>
+            </label>
+          </div>
           <button class="btn" type="submit">Consultar</button>
         </form>
         <div id="result" class="result"></div>

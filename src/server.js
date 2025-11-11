@@ -292,6 +292,7 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
   const ping = ((req.query.ping || 'false').toString().trim().toLowerCase() === 'true');
   const moderatorId = (req.query.moderatorId || '').toString().trim();
   const lang = (req.query.lang || 'en').toString().trim();
+  const tokenParam = (req.query.token || req.query.mod_token || '').toString().trim();
 
   const loginRe = /^[A-Za-z0-9_]{1,32}$/;
   if (!loginRe.test(streamer) || !loginRe.test(viewer)) {
@@ -302,8 +303,13 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
   const streamerLower = streamer.toLowerCase();
   const modId = (req.query.moderatorId || '').toString().trim();
 
+  // Prioridad 1: token enviado directamente por query (?token=...)
+  if (tokenParam) {
+    channelToken = tokenParam;
+  }
+
   if (modId && req.channel?.access_token && String(req.channel.channel_id) === modId) {
-    channelToken = req.channel.access_token;
+    channelToken = channelToken || req.channel.access_token;
   }
   if (!channelToken && modId) {
     for (const item of channelTokens.values()) {

@@ -57,7 +57,7 @@ API sencilla para consultar cuánto tiempo lleva un usuario siguiendo a un canal
   - JSON:
     - `http://localhost:3000/api/followage?touser=usuario&channel=canal&format=json`
 
-- `GET /twitch/followage/{Streamer}/{Viewer}?format=ymdhis|json&ping=true|false&moderatorId=ID&lang=es|en`
+- `GET /twitch/followage/{Streamer}/{Viewer}?format=ymdhis|json&ping=true|false&moderatorId=ID&lang=es|en&token=OAUTH`
   - Estilo Garret; consultas públicas si hay token de canal/moderador disponible en el servidor.
   - `Streamer`: login del canal.
   - `Viewer`: login del usuario.
@@ -69,7 +69,7 @@ API sencilla para consultar cuánto tiempo lleva un usuario siguiendo a un canal
   Ejemplo:
   - `http://localhost:3000/twitch/followage/ponss17/testviewer?format=ymdhis&ping=false`
   - JSON:
-    - `http://localhost:3000/twitch/followage/ponss17/testviewer?format=json&lang=es`
+    - `http://localhost:3000/twitch/followage/ponss17/testviewer?format=json&lang=es&token=OAUTH`
 
 - `GET /twitch/chatter/{Streamer}?bots=true|false&count=1..10&moderatorId=ID`
   - Devuelve uno o varios chatters aleatorios desde el canal usando TMI.
@@ -103,24 +103,27 @@ Puedes agregar el comando en Nightbot usando el endpoint público estilo Garret 
 - Usuario actual del chat:
 
   ```
-  !commands add !followage $(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es)
+  !commands add !followage $(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es&token=OAUTH_DEL_MOD)
   ```
 
 - Consultar a otro usuario con `$(touser)`:
 
   ```
-  !commands add !followage $(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(touser)?format=ymdhis&lang=es)
+  !commands add !followage $(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(touser)?format=ymdhis&lang=es&token=OAUTH_DEL_MOD)
   ```
 
 - Con menciones en la respuesta (añade `ping=true`):
 
   ```
-  !commands add !followage $(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(touser)?format=ymdhis&lang=es&ping=true)
+  !commands add !followage $(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(touser)?format=ymdhis&lang=es&ping=true&token=OAUTH_DEL_MOD)
   ```
 
 - Inglés: sustituye `lang=es` por `lang=en`.
 
-Importante: el canal debe estar habilitado públicamente en este servidor (dueño/moderador ha iniciado sesión) o tener `TWITCH_CHANNEL_TOKEN` configurado; de lo contrario, Nightbot no podrá consultar el followage sin iniciar sesión de usuario.
+Importante:
+
+- Si incluyes `&token=...` en la URL, el endpoint funciona sin depender de que el canal esté habilitado en memoria o por variable de entorno.
+- Pasar tokens en la URL puede exponerlos a quien tenga acceso a ver los comandos. Considera usar un token dedicado/rotatorio sólo para Nightbot.
 
 ## Respuesta JSON
 

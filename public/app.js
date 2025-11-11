@@ -14,6 +14,8 @@ const channelAuthStatusEl = document.getElementById('channelAuthStatus');
 const channelLoginBtn = document.getElementById('channelLoginBtn');
 const channelLogoutBtn = document.getElementById('channelLogoutBtn');
 const channelNotice = document.getElementById('channelNotice');
+const moderatorIdEl = document.getElementById('moderatorId');
+const channelTokenEl = document.getElementById('channelToken');
 let isAuthenticated = false;
 let isChannelAuthenticated = false;
 
@@ -115,6 +117,8 @@ form.addEventListener('submit', async (e) => {
   const channel = channelEl.value.trim();
   const lang = langEl.value;
   const format = formatEl.value;
+  const moderatorId = (moderatorIdEl?.value || '').trim();
+  const channelToken = (channelTokenEl?.value || '').trim();
   if (!viewer || !channel) {
     resultEl.textContent = 'Completa usuario y canal.';
     return;
@@ -130,6 +134,8 @@ form.addEventListener('submit', async (e) => {
       url.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
       url.searchParams.set('ping', 'false');
       url.searchParams.set('lang', lang);
+      if (moderatorId) url.searchParams.set('moderatorId', moderatorId);
+      if (channelToken) url.searchParams.set('token', channelToken);
       garretUrlForDisplay = url.toString();
       const r = await fetch(url);
       if (r.ok) {
