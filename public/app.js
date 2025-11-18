@@ -236,11 +236,11 @@ form.addEventListener('submit', async (e) => {
     }
 
     if (urlBlockEl && urlExampleEl && garretUrlForDisplay) {
-      urlExampleEl.textContent = garretUrlForDisplay;
+      urlExampleEl.textContent = `$(urlfetch ${garretUrlForDisplay})`;
       urlBlockEl.style.display = '';
     }
     if (urlGenericBlockEl && urlGenericExampleEl && genericUrlForDisplay) {
-      urlGenericExampleEl.textContent = genericUrlForDisplay;
+      urlGenericExampleEl.textContent = `$(urlfetch ${genericUrlForDisplay})`;
       urlGenericBlockEl.style.display = '';
     }
   } catch (err) {

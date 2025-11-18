@@ -96,54 +96,49 @@
       <section class="card">
         <h2>Características</h2>
         <ul>
-          <li>Autocompletado de <code>Moderator ID</code> y <code>Token</code> tras login Canal/Moderador.</li>
-          <li>Generación de URL personalizada y genérica (Nightbot) con i18n ES/EN.</li>
-          <li>Endpoint público estilo Garret compatible con bots (<code>/twitch/followage/{channel}/{user}</code>).</li>
-          <li>Cacheo y renovación automática de tokens de aplicación de Twitch.</li>
+          <li>Login Canal/Moderador cachea <code>channel_id</code> y <code>token</code>; autocompleta Moderator ID y Token.</li>
+          <li>Genera y muestra URL personalizada y genérica (Nightbot) envueltas como <code>$(urlfetch ...)</code>.</li>
+          <li>i18n ES/EN: etiquetas de URL y respuestas en el idioma seleccionado.</li>
+          <li>Endpoint público estilo Garret: <code>/twitch/followage/{channel}/{user}</code> con <code>format=ymdhis</code>, <code>ping=false</code> y <code>lang=es</code> por defecto.</li>
+          <li>Endpoint privado: <code>/api/followage</code> usa la sesión del usuario autenticado.</li>
         </ul>
       </section>
 
       <section id="docs" class="card">
         <h2>Pasos de uso</h2>
         <ol>
-          <li>Configura variables de entorno: <code>TWITCH_CLIENT_ID</code> y <code>TWITCH_CLIENT_SECRET</code>.</li>
+          <li>Configura <code>TWITCH_CLIENT_ID</code> y <code>TWITCH_CLIENT_SECRET</code>.</li>
           <li>Instala y arranca: <code>npm install</code> y <code>npm start</code>.</li>
           <li>Autenticación (opcional):
             <ul>
-              <li><strong>Usuario</strong>: inicia sesión para que el campo <code>Usuario</code> se rellene y bloquee automáticamente.</li>
-              <li><strong>Canal/Moderador</strong>: inicia sesión para que <code>Moderator ID</code> y <code>Token</code> se autocompleten y queden cacheados para consultas públicas.</li>
+              <li><strong>Usuario</strong>: autopuebla y bloquea el campo <code>Usuario</code> en el formulario.</li>
+              <li><strong>Canal/Moderador</strong>: autopuebla <code>Moderator ID</code> y <code>Token</code>; habilita consultas públicas estilo Garret.</li>
             </ul>
           </li>
-          <li>Endpoints disponibles:
+          <li>Consulta desde la demo o usando endpoints:</li>
+          <li>Endpoints:
             <ul>
-              <li>Privado (usa tu sesión): <code>/api/followage?channel=&lt;canal&gt;&format=text|json&lang=es|en</code>.</li>
-              <li>Público (para bots): <code>/twitch/followage/{StreamerUsername}/{ViewerUsername}?format=ymdhis|json&lang=es|en&ping=true|false</code>.</li>
+              <li>Privado (usa tu sesión): <code>/api/followage?touser=&lt;usuario&gt;&channel=&lt;canal&gt;&format=text|json&lang=es|en</code>.</li>
+              <li>Público: <code>/twitch/followage/{channel}/{user}?format=ymdhis|json&ping=true|false&lang=es|en[&moderatorId=...][&token=...]</code>.</li>
             </ul>
           </li>
           <li>Salud del servicio: <code>/health</code>.</li>
         </ol>
-        <p class="muted">Modo público: si el canal/moderador está autenticado, cualquiera puede consultar el followage de su canal mediante el endpoint público.</p>
 
         <hr />
         <h3>Command APIs</h3>
-        <p>Patrón de URL público (compatible con Nightbot y otros bots):</p>
-        <pre><code>GET /twitch/followage/{StreamerUsername}/{ViewerUsername}?format=ymdhis|json&ping=true|false&moderatorId={ModeratorId}&lang=es|en&token={OAuthMod}</code></pre>
+        <p>Patrón público compatible con bots (Nightbot, etc.):</p>
+        <pre><code>GET /twitch/followage/{StreamerUsername}/{ViewerUsername}?format=ymdhis|json&ping=true|false&lang=es|en[&moderatorId={ModeratorId}][&token={OAuthMod}]</code></pre>
         <ul>
-          <li><code>StreamerUsername</code>: login del canal (broadcaster).</li>
-          <li><code>ViewerUsername</code>: login del usuario (viewer).</li>
-          <li><code>format</code>: <code>ymdhis</code> (por defecto en texto) o <code>json</code>.</li>
-          <li><code>ping</code>: añade menciones en la respuesta de texto (<code>true</code> o <code>false</code>; por defecto <code>false</code>).</li>
-          <li><code>moderatorId</code> (opcional): id del moderador/canal para seleccionar el token cacheado si existe. Si has iniciado sesión Canal/Moderador aquí, generalmente no es necesario.</li>
-          <li><code>lang</code>: <code>es</code> (por defecto en texto) o <code>en</code>.</li>
-          <li><code>token</code> (opcional): OAuth del canal/mod con scope <code>moderator:read:followers</code>. Si has iniciado sesión Canal/Moderador en este servidor, no es necesario pasarlo.</li>
-          <li>Placeholders Nightbot: <code>$(channel)</code> (canal actual), <code>$(user)</code> (quien ejecuta), <code>$(touser)</code> (usuario mencionado).</li>
+          <li><code>format</code>: <code>ymdhis</code> por defecto; <code>json</code> alternativo.</li>
+          <li><code>ping</code>: <code>false</code> por defecto; añade menciones si es <code>true</code>.</li>
+          <li><code>lang</code>: <code>es</code> por defecto en texto; <code>en</code> opcional.</li>
+          <li><code>moderatorId</code> y <code>token</code> (opcionales): si el canal/moderador está autenticado aquí, normalmente no se requieren.</li>
         </ul>
-        <p>Ejemplos Nightbot (producción):</p>
-        <pre><code>!commands add -ul=everyone !followage $(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es)</code></pre>
-        <pre><code>!commands add -ul=everyone !followage $(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(touser)?format=json&lang=en&ping=true)</code></pre>
-        <p>Si prefieres usar un token dedicado (sin depender de la sesión del servidor):</p>
-        <pre><code>!commands add -ul=everyone !followage $(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es&token=OAUTH_DEL_MOD)</code></pre>
-        <p class="notice">Aviso: incluir <code>token</code> en la URL lo expone a quien vea el comando. Usa un token dedicado/rotatorio para el bot y revócalo si es necesario.</p>
+        <p>Ejemplos Nightbot (listos para copiar):</p>
+        <pre><code>$(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es)</code></pre>
+        <pre><code>$(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(touser)?format=json&lang=en&ping=true)</code></pre>
+        <p class="notice">Aviso: si incluyes <code>token</code> en la URL quedará visible en el comando. Usa un token dedicado/rotatorio y revócalo si es necesario.</p>
       </section>
 
       <section class="card muted">
