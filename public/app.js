@@ -26,17 +26,41 @@ let isChannelAuthenticated = false;
 const i18n = {
   es: {
     urlPersonal: 'URL personalizada:',
-    urlGeneric: 'URL genérica (Nightbot):'
+    urlGeneric: 'URL genérica (Nightbot):',
+    completeBoth: 'Completa usuario y canal.',
+    consulting: 'Consultando...',
+    mustAuth: 'Debes iniciar sesión (usuario) o autenticar el canal para consultar followage.',
+    errorMustAuth: 'Error: Debes iniciar sesión (usuario o canal) para usar esta API.',
+    unknownError: 'Error desconocido',
+    errorPrefix: 'Error: ',
+    authStatusNo: 'No autenticado',
+    authStatusYesPrefix: 'Sesión: ',
+    channelAuthStatusNo: 'Canal no autenticado',
+    channelAuthStatusYesPrefix: 'Canal autenticado: '
   },
   en: {
     urlPersonal: 'Personalized URL:',
-    urlGeneric: 'Generic URL (Nightbot):'
+    urlGeneric: 'Generic URL (Nightbot):',
+    completeBoth: 'Please fill user and channel.',
+    consulting: 'Fetching...',
+    mustAuth: 'You must log in (user) or authenticate the channel to query followage.',
+    errorMustAuth: 'Error: You must log in (user or channel) to use this API.',
+    unknownError: 'Unknown error',
+    errorPrefix: 'Error: ',
+    authStatusNo: 'Not authenticated',
+    authStatusYesPrefix: 'Session: ',
+    channelAuthStatusNo: 'Channel not authenticated',
+    channelAuthStatusYesPrefix: 'Channel authenticated: '
   }
 };
 
-function updateUrlLabels() {
+function getDict() {
   const lang = (langEl?.value || 'es');
-  const dict = i18n[lang] || i18n.es;
+  return i18n[lang] || i18n.es;
+}
+
+function updateUrlLabels() {
+  const dict = getDict();
   if (urlPersonalLabelEl) urlPersonalLabelEl.textContent = dict.urlPersonal;
   if (urlGenericLabelEl) urlGenericLabelEl.textContent = dict.urlGeneric;
 }
@@ -57,9 +81,10 @@ async function refreshAuth() {
     const resp = await fetch('/me');
     if (resp.ok) {
       const data = await resp.json();
+      const dict = getDict();
       if (data.authenticated && data.user) {
         isAuthenticated = true;
-        authStatusEl.textContent = `Sesión: ${data.user.display_name || data.user.login}`;
+        authStatusEl.textContent = `${dict.authStatusYesPrefix}${data.user.display_name || data.user.login}`;
         loginBtn.style.display = 'none';
         logoutBtn.style.display = '';
         if (viewerEl && !viewerEl.value) {
@@ -68,7 +93,7 @@ async function refreshAuth() {
         if (demoNotice) demoNotice.style.display = 'none';
       } else {
         isAuthenticated = false;
-        authStatusEl.textContent = 'No autenticado';
+        authStatusEl.textContent = dict.authStatusNo;
         loginBtn.style.display = '';
         logoutBtn.style.display = 'none';
       }
@@ -99,9 +124,10 @@ async function refreshChannelAuth() {
     const resp = await fetch('/channel/me');
     if (resp.ok) {
       const data = await resp.json();
+      const dict = getDict();
       if (data.authenticated && data.channel) {
         isChannelAuthenticated = true;
-        if (channelAuthStatusEl) channelAuthStatusEl.textContent = `Canal autenticado: ${data.channel.display_name || data.channel.channel_login}`;
+        if (channelAuthStatusEl) channelAuthStatusEl.textContent = `${dict.channelAuthStatusYesPrefix}${data.channel.display_name || data.channel.channel_login}`;
         if (channelLoginBtn) channelLoginBtn.style.display = 'none';
         if (channelLogoutBtn) channelLogoutBtn.style.display = '';
         if (channelNotice) channelNotice.style.display = 'none';
@@ -119,7 +145,7 @@ async function refreshChannelAuth() {
         } catch (_) {}
       } else {
         isChannelAuthenticated = false;
-        if (channelAuthStatusEl) channelAuthStatusEl.textContent = 'Canal no autenticado';
+        if (channelAuthStatusEl) channelAuthStatusEl.textContent = dict.channelAuthStatusNo;
         if (channelLoginBtn) channelLoginBtn.style.display = '';
         if (channelLogoutBtn) channelLogoutBtn.style.display = 'none';
         if (channelNotice) channelNotice.style.display = '';
@@ -147,13 +173,16 @@ refreshChannelAuth();
 
 // Cambiar etiquetas cuando cambia el idioma
 if (langEl) {
-  langEl.addEventListener('change', updateUrlLabels);
+  langEl.addEventListener('change', () => {
+    updateUrlLabels();
+    refreshAuth();
+    refreshChannelAuth();
+  });
 }
 updateUrlLabels();
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  // Asegura que las etiquetas de URL estén en el idioma seleccionado
   updateUrlLabels();
   const viewer = viewerEl.value.trim();
   const channel = channelEl.value.trim();
@@ -161,12 +190,15 @@ form.addEventListener('submit', async (e) => {
   const format = formatEl.value;
   const moderatorId = (moderatorIdEl?.value || '').trim();
   const channelToken = (channelTokenEl?.value || '').trim();
+
+  const dict = getDict();
+
   if (!viewer || !channel) {
-    resultEl.textContent = 'Completa usuario y canal.';
+    resultEl.textContent = dict.completeBoth;
     return;
   }
 
-  resultEl.textContent = 'Consultando...';
+  resultEl.textContent = dict.consulting;
   try {
     let resp;
     let usedGarret = false;
@@ -208,7 +240,7 @@ form.addEventListener('submit', async (e) => {
     }
     if (!resp) {
       if (!isAuthenticated) {
-        resultEl.textContent = 'Debes iniciar sesión (usuario) o autenticar el canal para consultar followage.';
+        resultEl.textContent = dict.mustAuth;
         return;
       }
       const url = new URL('/api/followage', window.location.origin);
@@ -220,10 +252,10 @@ form.addEventListener('submit', async (e) => {
     }
     if (!resp.ok) {
       if (resp.status === 401) {
-        resultEl.textContent = 'Error: Debes iniciar sesión (usuario o canal) para usar esta API.';
+        resultEl.textContent = dict.errorMustAuth;
       } else {
-        const err = await resp.json().catch(() => ({ message: 'Error desconocido' }));
-        resultEl.textContent = `Error: ${err.message || resp.status}`;
+        const err = await resp.json().catch(() => ({ message: dict.unknownError }));
+        resultEl.textContent = `${dict.errorPrefix}${err.message || resp.status}`;
       }
       return;
     }
@@ -244,6 +276,7 @@ form.addEventListener('submit', async (e) => {
       urlGenericBlockEl.style.display = '';
     }
   } catch (err) {
-    resultEl.textContent = `Error: ${err.message || err}`;
+    const d = getDict();
+    resultEl.textContent = `${d.errorPrefix}${err?.message || d.unknownError}`;
   }
 });
