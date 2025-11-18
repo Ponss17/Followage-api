@@ -107,45 +107,49 @@
       <section id="docs" class="card">
         <h2>Pasos de uso</h2>
         <ol class="step-list">
-          <li>Configura <code>TWITCH_CLIENT_ID</code> y <code>TWITCH_CLIENT_SECRET</code>.</li>
-          <li>Instala y arranca: <code>npm install</code> y <code>npm start</code>.</li>
-          <li>Autenticación (opcional): Usuario y Canal/Moderador para autopoblar campos y habilitar consultas públicas.</li>
-          <li>Consulta desde la demo o usando los endpoints adecuados.</li>
-          <li>Salud del servicio: <code>/health</code>.</li>
+          <li>Iniciar sesión de Usuario con Twitch (opcional si el canal/mod está autenticado).</li>
+          <li>Iniciar sesión de Canal/Moderador para habilitar consultas públicas y autocompletar Moderator ID y Token.</li>
+          <li>Agregar Usuario (touser) y Canal (channel) en el formulario.</li>
+          <li>Elegir Idioma (ES/EN) y Formato (Texto/JSON).</li>
+          <li>Presionar “Generar” para ver el resultado y las URLs copiable.</li>
+          <li>Copiar el comando Nightbot desde “URL genérica (Nightbot)” y pegarlo en tu bot.</li>
+          <li>(Opcional) Verificar la salud del servicio en <code>/health</code>.</li>
         </ol>
+        <li>Consulta desde la demo o usando los endpoints adecuados.</li>
+        <li>Salud del servicio: <code>/health</code>.</li>
+      </ol>
 
-        <hr />
-        <h3>Comandos</h3>
-        <p>Patrón público compatible con bots (Nightbot, etc.):</p>
-        <pre><code>GET /twitch/followage/{StreamerUsername}/{ViewerUsername}?format=ymdhis|json&ping=true|false&lang=es|en[&moderatorId={ModeratorId}][&token={OAuthMod}]</code></pre>
-        <ul>
-          <li><code>format</code>: <code>ymdhis</code> por defecto; <code>json</code> alternativo.</li>
-          <li><code>ping</code>: <code>false</code> por defecto; añade menciones si es <code>true</code>.</li>
-          <li><code>lang</code>: <code>es</code> por defecto en texto; <code>en</code> opcional.</li>
-          <li><code>moderatorId</code> y <code>token</code> (opcionales): si el canal/moderador está autenticado aquí, normalmente no se requieren.</li>
-        </ul>
-        <p>Ejemplos Nightbot (listos para copiar):</p>
-        <pre><code>$(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es)</code></pre>
-        <pre><code>$(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(touser)?format=json&lang=en&ping=true)</code></pre>
-        <p class="notice">Aviso: si incluyes <code>token</code> en la URL quedará visible en el comando. Usa un token dedicado/rotatorio y revócalo si es necesario.</p>
-      </section>
+      <hr />
+      <h3>Comandos</h3>
+      <p>Patrón público compatible con bots (Nightbot, etc.):</p>
+      <pre><code>GET /twitch/followage/{StreamerUsername}/{ViewerUsername}?format=ymdhis|json&ping=true|false&lang=es|en[&moderatorId={ModeratorId}][&token={OAuthMod}]</code></pre>
+      <ul>
+        <li><code>format</code>: <code>ymdhis</code> por defecto; <code>json</code> alternativo.</li>
+        <li><code>ping</code>: <code>false</code> por defecto; añade menciones si es <code>true</code>.</li>
+        <li><code>lang</code>: <code>es</code> por defecto en texto; <code>en</code> opcional.</li>
+        <li><code>moderatorId</code> y <code>token</code> (opcionales): si el canal/moderador está autenticado aquí, normalmente no se requieren.</li>
+      </ul>
+      <p>Ejemplos Nightbot (listos para copiar):</p>
+      <pre><code>$(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es)</code></pre>
+      <pre><code>$(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(touser)?format=json&lang=en&ping=true)</code></pre>
+      <p class="notice">Aviso: si incluyes <code>token</code> en la URL quedará visible en el comando. Usa un token dedicado/rotatorio y revócalo si es necesario.</p>
+    </section>
 
-      <section class="card muted">
-        <h2>Notas</h2>
-        <ul>
-          <li>Token de aplicación de Twitch cacheado y renovado automáticamente.</li>
-          <li>Duraciones aproximadas para meses/días (30 días/mes, 365 días/año).</li>
-          <li>Si necesitas precisión de calendario exacta, se puede ajustar.</li>
-        </ul>
-      </section>
-    </main>
+    <section class="card muted">
+      <h2>Notas</h2>
+      <ul>
+        <li>Token de aplicación de Twitch cacheado y renovado automáticamente.</li>
+        <li>Duraciones aproximadas para meses/días (30 días/mes, 365 días/año).</li>
+        <li>Si necesitas precisión de calendario exacta, se puede ajustar.</li>
+      </ul>
+    </section>
+  </main>
 
-    <footer class="footer">
-      <div class="container">
-        <p>© Followage API</p>
-      </div>
-    </footer>
+  <footer class="footer">
+    <div class="container">
+      <p>© Followage API</p>
+    </div>
+  </footer>
 
-    <script src="/app.js"></script>
-  </body>
+  <script src="/app.js"></script>
   </html>

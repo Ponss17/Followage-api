@@ -97,7 +97,6 @@ Si estás autenticado, `GET /api/followage` usa tu `login` como `viewer` por def
 Para uso público estilo Garret, basta con que el dueño del canal o un moderador haga login de canal/moderador una vez; a partir de ahí, cualquier visitante puede consultar `GET /twitch/followage/{Streamer}/{Viewer}` sin sesión.
 
 ## Nightbot
-
 Puedes agregar el comando en Nightbot usando el endpoint público estilo Garret y las variables integradas:
 
 - Usuario actual del chat:
