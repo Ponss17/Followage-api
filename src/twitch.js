@@ -130,7 +130,7 @@ export async function getFollowageTextByPattern({ viewer, channel, pattern = 'ym
   const json = await getFollowageJsonByFollowers({ viewer, channel, channelToken });
   const notFollowingText = lang === 'es' ? 'no sigue' : 'not following';
   if (!json.following) return ping ? `@${channel} @${viewer} ${notFollowingText}` : notFollowingText;
-  const formatted = formatByPattern(json.duration, pattern);
+  const formatted = formatByPattern(json.duration, pattern, lang);
   return ping ? `@${channel} @${viewer} ${formatted}` : formatted;
 }
 

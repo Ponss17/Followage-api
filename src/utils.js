@@ -50,6 +50,32 @@ export function formatByPattern(duration, pattern = 'ymdhis') {
   return parts.join(', ');
 }
 
+export function formatByPattern(duration, pattern = 'ymdhis', lang = 'en') {
+  const isEs = lang === 'es';
+  const tokens = {
+    y: { value: duration.years, singular: isEs ? 'año' : 'year', plural: isEs ? 'años' : 'years' },
+    m: { value: duration.months, singular: isEs ? 'mes' : 'month', plural: isEs ? 'meses' : 'months' },
+    w: { value: duration.weeks, singular: isEs ? 'semana' : 'week', plural: isEs ? 'semanas' : 'weeks' },
+    d: { value: duration.days, singular: isEs ? 'día' : 'day', plural: isEs ? 'días' : 'days' },
+    h: { value: duration.hours, singular: isEs ? 'hora' : 'hour', plural: isEs ? 'horas' : 'hours' },
+    i: { value: duration.minutes, singular: isEs ? 'minuto' : 'minute', plural: isEs ? 'minutos' : 'minutes' },
+    s: { value: duration.seconds, singular: isEs ? 'segundo' : 'second', plural: isEs ? 'segundos' : 'seconds' },
+  };
+
+  const parts = [];
+  for (const ch of pattern) {
+    const t = tokens[ch];
+    if (!t) continue;
+    const v = t.value;
+    if (typeof v !== 'number') continue;
+    // Mostrar cero si todo sería vacío, para evitar cadena vacía
+    if (v || parts.length === 0) {
+      parts.push(`${v} ${pluralize(v, t.singular, t.plural)}`);
+    }
+  }
+  return parts.join(', ');
+}
+
 export function formatFollowageText(json, lang = 'es') {
   const { viewer, channel, following } = json;
   if (!following) {
