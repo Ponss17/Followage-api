@@ -183,3 +183,9 @@ input:focus-visible, select:focus-visible {
   color: white;
   font-weight: 700;
 }
+
+.result small {
+  display: block;
+  text-align: left;
+  font-weight: 600;
+}

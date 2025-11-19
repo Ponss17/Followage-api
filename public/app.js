@@ -23,44 +23,24 @@ const channelTokenEl = document.getElementById('channelToken');
 let isAuthenticated = false;
 let isChannelAuthenticated = false;
 
+// Ajuste para las etiquetas de URL
 const i18n = {
   es: {
-    urlPersonal: 'URL personalizada:',
-    urlGeneric: 'URL genérica (Nightbot):',
-    completeBoth: 'Completa usuario y canal.',
-    consulting: 'Consultando...',
-    mustAuth: 'Debes iniciar sesión (usuario) o autenticar el canal para consultar followage.',
-    errorMustAuth: 'Error: Debes iniciar sesión (usuario o canal) para usar esta API.',
-    unknownError: 'Error desconocido',
-    errorPrefix: 'Error: ',
-    authStatusNo: 'No autenticado',
-    authStatusYesPrefix: 'Sesión: ',
-    channelAuthStatusNo: 'Canal no autenticado',
-    channelAuthStatusYesPrefix: 'Canal autenticado: '
+    urlPersonal: 'URL personalizada (solo follow del usuario):',
+    urlGeneric: 'URL genérica (Nightbot; para cualquier usuario):'
   },
   en: {
-    urlPersonal: 'Personalized URL:',
-    urlGeneric: 'Generic URL (Nightbot):',
-    completeBoth: 'Please fill user and channel.',
-    consulting: 'Fetching...',
-    mustAuth: 'You must log in (user) or authenticate the channel to query followage.',
-    errorMustAuth: 'Error: You must log in (user or channel) to use this API.',
-    unknownError: 'Unknown error',
-    errorPrefix: 'Error: ',
-    authStatusNo: 'Not authenticated',
-    authStatusYesPrefix: 'Session: ',
-    channelAuthStatusNo: 'Channel not authenticated',
-    channelAuthStatusYesPrefix: 'Channel authenticated: '
+    urlPersonal: "Personalized URL (returns only the specified user's follow):",
+    urlGeneric: 'Generic URL (Nightbot; works for any user):'
   }
 };
 
-function getDict() {
-  const lang = (langEl?.value || 'es');
-  return i18n[lang] || i18n.es;
-}
-
 function updateUrlLabels() {
-  const dict = getDict();
+  const langEl = document.getElementById('lang');
+  const urlPersonalLabelEl = document.getElementById('urlPersonalLabel');
+  const urlGenericLabelEl = document.getElementById('urlGenericLabel');
+  const lang = (langEl?.value || 'es');
+  const dict = i18n[lang] || i18n.es;
   if (urlPersonalLabelEl) urlPersonalLabelEl.textContent = dict.urlPersonal;
   if (urlGenericLabelEl) urlGenericLabelEl.textContent = dict.urlGeneric;
 }

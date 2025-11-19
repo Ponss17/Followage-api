@@ -71,5 +71,5 @@ export function formatFollowageText(json, lang = 'es') {
   if (lang === 'en') {
     return `${viewer} has been following ${channel} for ${parts.join(', ')} (since ${sinceStr}).`;
   }
-  return `${viewer} sigue a ${channel} desde hace ${parts.join(', ')} (desde ${sinceStr}).`;
+  return `${viewer} lleva siguiendo a ${channel} ${parts.join(', ')}.`;
 }
