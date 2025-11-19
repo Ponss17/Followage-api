@@ -85,7 +85,7 @@ app.get('/', (_req, res) => {
   res.sendFile(path.join(publicDir, 'index.html'));
 });
 
-// --- OAuth login with Twitch ---
+// --- OAuth ---
 app.get('/auth/login', (req, res) => {
   const clientId = process.env.TWITCH_CLIENT_ID;
   const authUrl = new URL('https://id.twitch.tv/oauth2/authorize');
@@ -303,7 +303,6 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
   const streamerLower = streamer.toLowerCase();
   const modId = (req.query.moderatorId || '').toString().trim();
 
-  // Prioridad 1: token enviado directamente por query (?token=...)
   if (tokenParam) {
     channelToken = tokenParam;
   }

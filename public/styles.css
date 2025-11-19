@@ -90,7 +90,7 @@ main { padding: 8px 0 40px; }
   border: 1px solid #1f2240;
 }
 
-/* Auth boxes */
+/* Auth */
 .auth-box {
   display: flex;
   gap: 10px;
@@ -159,7 +159,7 @@ input:focus-visible, select:focus-visible {
 .footer a { color: var(--accent-2); text-decoration: none; }
 .footer a:hover { text-decoration: underline; }
 
-/* Pasos con estilo de cards numeradas */
+/* cards */
 .step-list { counter-reset: stepCounter; list-style: none; padding: 0; margin: 0; }
 .step-list li {
   counter-increment: stepCounter;

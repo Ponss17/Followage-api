@@ -131,7 +131,6 @@ async function refreshChannelAuth() {
         if (channelLoginBtn) channelLoginBtn.style.display = 'none';
         if (channelLogoutBtn) channelLogoutBtn.style.display = '';
         if (channelNotice) channelNotice.style.display = 'none';
-        // Autocompletar Moderator ID y token desde la sesión de canal/mod
         try {
           const ch = data.channel || {};
           const chId = ch.channel_id != null ? String(ch.channel_id) : '';
@@ -171,7 +170,7 @@ if (channelLogoutBtn) {
 
 refreshChannelAuth();
 
-// Cambiar etiquetas cuando cambia el idioma
+// Seleccion de idioma
 if (langEl) {
   langEl.addEventListener('change', () => {
     updateUrlLabels();
@@ -205,7 +204,7 @@ form.addEventListener('submit', async (e) => {
     let garretUrlForDisplay;
     let genericUrlForDisplay;
     {
-      // URL de producción para mostrar (copiable)
+      // URL 
       const displayBase = 'https://followage-api.onrender.com';
       const displayUrl = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, displayBase);
       displayUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
@@ -215,7 +214,7 @@ form.addEventListener('submit', async (e) => {
       if (channelToken) displayUrl.searchParams.set('token', channelToken);
       garretUrlForDisplay = displayUrl.toString();
 
-      // URL genérica para Nightbot (placeholders)
+      // URL genérica para Nightbot 
       const genericBase = 'https://followage-api.onrender.com';
       const genericUrl = new URL(`/twitch/followage/$(channel)/$(user)`, genericBase);
       genericUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
@@ -225,7 +224,7 @@ form.addEventListener('submit', async (e) => {
       if (channelToken) genericUrl.searchParams.set('token', channelToken);
       genericUrlForDisplay = genericUrl.toString();
 
-      // URL local para consultar (evita CORS en desarrollo)
+      // URL local para consultar 
       const fetchUrl = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, window.location.origin);
       fetchUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
       fetchUrl.searchParams.set('ping', 'false');

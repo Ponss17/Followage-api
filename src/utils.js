@@ -43,7 +43,6 @@ export function formatByPattern(duration, pattern = 'ymdhis', lang = 'en') {
     if (!t) continue;
     const v = t.value;
     if (typeof v !== 'number') continue;
-    // Mostrar cero si todo sería vacío, para evitar cadena vacía
     if (v || parts.length === 0) {
       parts.push(`${v} ${pluralize(v, t.singular, t.plural)}`);
     }

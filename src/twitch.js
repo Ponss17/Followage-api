@@ -7,7 +7,7 @@ async function getAppAccessToken() {
   const clientId = process.env.TWITCH_CLIENT_ID;
   const clientSecret = process.env.TWITCH_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
-    const err = new Error('Faltan TWITCH_CLIENT_ID/TWITCH_CLIENT_SECRET en variables de entorno');
+    const err = new Error('Faltan TWITCH_CLIENT_ID/TWITCH_CLIENT_SECRET en variables de entorno, por favor contactar con Ponss, Discord: ponsschiquito');
     err.statusCode = 500;
     throw err;
   }
@@ -71,7 +71,7 @@ export async function getFollowRecord(fromId, toId, userToken) {
   }
   let cursor = null;
   let safety = 0;
-  while (safety++ < 20) { // limita a ~2000 canales seguidos
+  while (safety++ < 20) {
     const params = { user_id: fromId, first: '100' };
     if (cursor) params.after = cursor;
     const data = await twitchFetch('channels/followed', params, userToken);

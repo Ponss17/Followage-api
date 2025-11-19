@@ -12,8 +12,8 @@
   <body>
     <header class="hero">
       <div class="container">
-        <h1>Followage API</h1>
-        <p>Consulta cuánto tiempo <em>user</em> lleva siguiendo a <em>channel</em> en Twitch.</p>
+        <h1>LosPerrisFollowage API</h1>
+        <p>Consulta cuánto tiempo <em>un usuario</em> lleva siguiendo tu <em>canal</em> en Twitch.</p>
         <div class="cta">
           <a class="btn" href="#demo">Probar ahora</a>
           <a class="btn btn-secondary" href="#docs">Ver pasos</a>
@@ -43,12 +43,12 @@
         <form id="followage-form">
           <div class="grid">
             <label>
-              Usuario (touser)
+              Usuario $(user)/$(touser)
               <input type="text" id="viewer" placeholder="Ingresa el usuario o se completará tras login" required />
               <small class="hint">Si el canal/moderador está autenticado, puedes consultar cualquier usuario sin login de usuario.</small>
             </label>
             <label>
-              Canal (channel)
+              Canal $(channel)
               <input type="text" id="channel" placeholder="p.ej. somechannel" required />
             </label>
           </div>
@@ -98,8 +98,8 @@
         <ul>
           <li><span class="icon">✓</span> Login Canal/Moderador cachea <code>channel_id</code> y <code>token</code>; autocompleta Moderator ID y Token.</li>
           <li><span class="icon">✓</span> Genera y muestra URL personalizada y genérica (Nightbot) envueltas como <code>$(urlfetch ...)</code>.</li>
-          <li><span class="icon">✓</span> i18n ES/EN: etiquetas de URL y respuestas en el idioma seleccionado.</li>
-          <li><span class="icon">✓</span> Endpoint público estilo Garret: <code>/twitch/followage/{channel}/{user}</code> con valores por defecto útiles.</li>
+          <li><span class="icon">✓</span> ES/EN: etiquetas de URL y respuestas en el idioma seleccionado.</li>
+          <li><span class="icon">✓</span> Endpoint público: <code>/twitch/followage/$(channel)/$(touser)</code> con valores por defecto útiles.</li>
           <li><span class="icon">✓</span> Endpoint privado: <code>/api/followage</code> usa la sesión del usuario autenticado.</li>
         </ul>
       </section>
@@ -147,7 +147,7 @@
 
   <footer class="footer">
     <div class="container">
-      <p>© Followage API</p>
+      <p>© LosPerrisFollowage API</p>
     </div>
   </footer>
 
