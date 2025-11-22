@@ -160,6 +160,7 @@ if (langEl) {
 }
 updateUrlLabels();
 
+// Dentro del submit, cambia el base de las URLs para usar tu dominio actual (Vercel)
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   updateUrlLabels();
@@ -184,12 +185,10 @@ form.addEventListener('submit', async (e) => {
     let garretUrlForDisplay;
     let genericUrlForDisplay;
     {
-      // Base dinámico: usa el dominio actual (Vercel)
+      // Base dinámico: Vercel (dominio actual)
       const displayBase = window.location.origin;
       const displayUrl = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, displayBase);
       displayUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
-      displayUrl.searchParams.set('lang', lang);
-      displayUrl.searchParams.set('ping', 'false');
       displayUrl.searchParams.set('lang', lang);
       if (moderatorId) displayUrl.searchParams.set('moderatorId', moderatorId);
       if (channelToken) displayUrl.searchParams.set('token', channelToken);

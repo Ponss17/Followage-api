@@ -393,11 +393,14 @@ app.get('/twitch/chatter/:streamer', async (req, res) => {
   }
 });
 
-// Exportar la app para serverless en Vercel
+// Al final del archivo, reemplaza el listen directo por uno condicional y exporta app
 export default app;
 
-// Solo escuchar en local (no en Vercel Functions)
-const isServerless = process.env.NETLIFY === 'true' || process.env.LAMBDA_TASK_ROOT != null || process.env.VERCEL === '1';
+const isServerless =
+  process.env.NETLIFY === 'true' ||
+  process.env.LAMBDA_TASK_ROOT != null ||
+  process.env.VERCEL === '1';
+
 if (!isServerless) {
   app.listen(port, () => {
     console.log(`Followage API escuchando en http://localhost:${port}`);
