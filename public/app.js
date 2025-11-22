@@ -51,7 +51,7 @@ if (toggleAdvancedBtn && advancedSection) {
 let isAuthenticated = false;
 let isChannelAuthenticated = false;
 
-// Función de traducción que faltaba - CRÍTICO para que funcionen los botones
+// Función de traducción que faltaba
 function getDict() {
   const langEl = document.getElementById('lang');
   const lang = langEl?.value || 'es';
@@ -225,7 +225,6 @@ if (langEl) {
 updateUrlLabels();
 updateAdvancedToggleLabel();
 
-// Dentro del submit, cambia el base de las URLs para usar tu dominio actual (Vercel)
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   updateUrlLabels();
@@ -250,7 +249,7 @@ form.addEventListener('submit', async (e) => {
     let garretUrlForDisplay;
     let genericUrlForDisplay;
     {
-      // Base dinámico: Vercel (dominio actual)
+      // Base Vercel 
       const displayBase = window.location.origin;
       const displayUrl = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, displayBase);
       displayUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
@@ -346,7 +345,7 @@ function updateRevealButtonsLabel() {
   }
 }
 
-// Inicial: aseguro tipo password y etiqueta correcta
+// asegura tipo password y etiqueta correcta
 if (moderatorIdEl) moderatorIdEl.type = 'password';
 if (channelTokenEl) channelTokenEl.type = 'password';
 updateRevealButtonsLabel();
@@ -364,3 +363,15 @@ if (toggleChannelBtn && channelTokenEl) {
     updateRevealButtonsLabel();
   });
 }
+
+// Selección de idioma: actualiza etiquetas del botón de revelar
+if (langEl) {
+  langEl.addEventListener('change', () => {
+    updateUrlLabels();
+    updateRevealButtonsLabel();
+    refreshAuth();
+    refreshChannelAuth();
+  });
+}
+updateUrlLabels();
+updateRevealButtonsLabel();

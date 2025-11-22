@@ -194,7 +194,7 @@ input:focus-visible, select:focus-visible {
   position: relative;
 }
 .input-row input {
-  padding-right: 88px; /* espacio para el botón dentro */
+  padding-right: 88px;
 }
 .reveal-btn {
   position: absolute;

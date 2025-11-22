@@ -392,10 +392,8 @@ app.get('/twitch/chatter/:streamer', async (req, res) => {
   }
 });
 
-// Exportar la app para serverless (Vercel)
 export default app;
 
-// Solo escuchar en local (no en Vercel)
 const isServerless =
   process.env.NETLIFY === 'true' ||
   process.env.LAMBDA_TASK_ROOT != null ||
