@@ -85,7 +85,7 @@ async function refreshAuth() {
 
 if (loginBtn) {
   loginBtn.addEventListener('click', () => {
-    window.location.href = '/auth/login';
+    window.location.href = new URL('/auth/login', window.location.origin).toString();
   });
 }
 if (logoutBtn) {
@@ -136,7 +136,7 @@ async function refreshChannelAuth() {
 
 if (channelLoginBtn) {
   channelLoginBtn.addEventListener('click', () => {
-    window.location.href = '/auth/channel/login';
+    window.location.href = new URL('/auth/channel/login', window.location.origin).toString();
   });
 }
 if (channelLogoutBtn) {

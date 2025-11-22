@@ -2,7 +2,7 @@ import serverless from 'serverless-http';
 import express from 'express';
 import app from '../src/server.js';
 
-// Envoltura para quitar el prefijo /api/app y que las rutas /auth/*, /twitch/*, etc. matcheen en Express
+// Quitar el prefijo /api/app de la URL antes de delegar a Express
 const wrapper = express();
 wrapper.use((req, _res, next) => {
   req.url = req.url.replace(/^\/api\/app/, '');
