@@ -1,4 +1,3 @@
-import serverless from 'serverless-http';
 import express from 'express';
 import app from '../src/server.js';
 
@@ -10,4 +9,7 @@ wrapper.use((req, _res, next) => {
 });
 wrapper.use(app);
 
-export default serverless(wrapper);
+// Exporta el handler compatible con Vercel (req, res)
+export default function handler(req, res) {
+  return wrapper(req, res);
+}
