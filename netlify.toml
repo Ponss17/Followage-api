@@ -2,24 +2,53 @@
   publish = "public"
   command = ""
 
+[functions]
+  directory = "netlify/functions"
+
+// Proxy de backend hacia la Function (Express envuelta)
 [[redirects]]
   from = "/auth/*"
-  to = "https://TU_BACKEND/auth/:splat"
+  to = "/.netlify/functions/app/auth/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/me"
+  to = "/.netlify/functions/app/me"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/channel/me"
+  to = "/.netlify/functions/app/channel/me"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/app/api/:splat"
   status = 200
   force = true
 
 [[redirects]]
   from = "/twitch/*"
-  to = "https://TU_BACKEND/twitch/:splat"
+  to = "/.netlify/functions/app/twitch/:splat"
   status = 200
   force = true
 
 [[redirects]]
   from = "/channel/*"
-  to = "https://TU_BACKEND/channel/:splat"
+  to = "/.netlify/functions/app/channel/:splat"
   status = 200
   force = true
 
+[[redirects]]
+  from = "/health"
+  to = "/.netlify/functions/app/health"
+  status = 200
+  force = true
+
+# Fallback solo para rutas del front, al final
 [[redirects]]
   from = "/*"
   to = "/index.html"

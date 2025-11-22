@@ -392,6 +392,13 @@ app.get('/twitch/chatter/:streamer', async (req, res) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`Followage API escuchando en http://localhost:${port}`);
-});
+// Exportar el app para Netlify Functions
+export default app;
+
+// Escuchar solo en entorno local (no en Netlify Functions)
+const isNetlify = process.env.NETLIFY === 'true' || process.env.LAMBDA_TASK_ROOT != null;
+if (!isNetlify) {
+  app.listen(port, () => {
+    console.log(`Followage API escuchando en http://localhost:${port}`);
+  });
+}
