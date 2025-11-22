@@ -23,6 +23,41 @@ const channelTokenEl = document.getElementById('channelToken');
 let isAuthenticated = false;
 let isChannelAuthenticated = false;
 
+// Función de traducción que faltaba - CRÍTICO para que funcionen los botones
+function getDict() {
+  const langEl = document.getElementById('lang');
+  const lang = langEl?.value || 'es';
+
+  const translations = {
+    es: {
+      authStatusYesPrefix: 'Autenticado como: ',
+      authStatusNo: 'No autenticado',
+      channelAuthStatusYesPrefix: 'Canal autenticado: ',
+      channelAuthStatusNo: 'Canal no autenticado',
+      completeBoth: 'Por favor completa ambos campos (usuario y canal)',
+      consulting: 'Consultando...',
+      mustAuth: 'Debes autenticarte o proporcionar un token de canal/moderador',
+      errorMustAuth: 'Error: Autenticación requerida',
+      unknownError: 'Error desconocido',
+      errorPrefix: 'Error: '
+    },
+    en: {
+      authStatusYesPrefix: 'Authenticated as: ',
+      authStatusNo: 'Not authenticated',
+      channelAuthStatusYesPrefix: 'Channel authenticated: ',
+      channelAuthStatusNo: 'Channel not authenticated',
+      completeBoth: 'Please complete both fields (user and channel)',
+      consulting: 'Consulting...',
+      mustAuth: 'You must authenticate or provide a channel/moderator token',
+      errorMustAuth: 'Error: Authentication required',
+      unknownError: 'Unknown error',
+      errorPrefix: 'Error: '
+    }
+  };
+
+  return translations[lang] || translations.es;
+}
+
 // Ajuste para las etiquetas de URL
 const i18n = {
   es: {
@@ -92,7 +127,7 @@ if (logoutBtn) {
   logoutBtn.addEventListener('click', async () => {
     try {
       await fetch('/auth/logout', { method: 'POST' });
-    } catch (_) {}
+    } catch (_) { }
     window.location.reload();
   });
 }
@@ -121,7 +156,7 @@ async function refreshChannelAuth() {
           if (channelTokenEl && !channelTokenEl.value && chToken) {
             channelTokenEl.value = chToken;
           }
-        } catch (_) {}
+        } catch (_) { }
       } else {
         isChannelAuthenticated = false;
         if (channelAuthStatusEl) channelAuthStatusEl.textContent = dict.channelAuthStatusNo;
@@ -131,7 +166,7 @@ async function refreshChannelAuth() {
       }
       updateFormMode();
     }
-  } catch (_) {}
+  } catch (_) { }
 }
 
 if (channelLoginBtn) {
@@ -143,7 +178,7 @@ if (channelLogoutBtn) {
   channelLogoutBtn.addEventListener('click', async () => {
     try {
       await fetch('/auth/channel/logout', { method: 'POST' });
-    } catch (_) {}
+    } catch (_) { }
     window.location.reload();
   });
 }
