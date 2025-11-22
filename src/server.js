@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
-import { getFollowageText, getFollowageJson, getFollowageTextByPattern } from './twitch.js';
+import { getFollowageText, getFollowageJson, getFollowageTextByPattern, getFollowageJsonByFollowers } from './twitch.js';
 import serverlessHttp from 'serverless-http';
 
 dotenv.config();
@@ -224,14 +224,11 @@ app.post('/auth/logout', (_req, res) => {
   res.json({ ok: true });
 });
 
-app.post('/auth/channel/logout', (_req, res) => {
+app.post('/auth/channel/logout', (req, res) => {
   try {
-    const cookie = _req.cookies?.channel_auth;
-    if (cookie) {
-      const data = JSON.parse(cookie);
-      if (data?.channel_login) {
-        channelTokens.delete(String(data.channel_login).toLowerCase());
-      }
+    const login = req.channel?.channel_login;
+    if (login) {
+      channelTokens.delete(String(login).toLowerCase());
     }
   } catch (_) {}
   res.clearCookie('channel_auth');
