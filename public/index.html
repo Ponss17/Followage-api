@@ -81,12 +81,18 @@
         <div class="grid" id="advancedSection" style="display:none" hidden>
           <label>
             Moderator ID (opcional)
-            <input type="text" id="moderatorId" placeholder="ID de moderador (numérico)" />
+            <div class="input-row">
+              <input type="password" id="moderatorId" placeholder="ID de moderador (numérico)" />
+              <button type="button" class="reveal-btn" id="toggleModeratorId">Mostrar</button>
+            </div>
             <small class="hint">Se completa automáticamente tras iniciar sesión Canal/Moderador; opcional.</small>
           </label>
           <label>
             Token del canal/moderador (opcional)
-            <input type="text" id="channelToken" placeholder="Pegue aquí el OAuth del mod" />
+            <div class="input-row">
+              <input type="password" id="channelToken" placeholder="Pegue aquí el OAuth del mod" />
+              <button type="button" class="reveal-btn" id="toggleChannelToken">Mostrar</button>
+            </div>
             <small class="hint">Se completa automáticamente tras iniciar sesión Canal/Moderador; opcional. Usa scope <code>moderator:read:followers</code>.</small>
           </label>
         </div>

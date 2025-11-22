@@ -189,3 +189,26 @@ input:focus-visible, select:focus-visible {
   text-align: left;
   font-weight: 600;
 }
+
+.input-row {
+  position: relative;
+}
+.input-row input {
+  padding-right: 88px; /* espacio para el botón dentro */
+}
+.reveal-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 12px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: #222a4a;
+  color: var(--text);
+  cursor: pointer;
+}
+.reveal-btn:hover {
+  background: #2b3560;
+}

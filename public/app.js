@@ -22,6 +22,8 @@ const moderatorIdEl = document.getElementById('moderatorId');
 const channelTokenEl = document.getElementById('channelToken');
 const toggleAdvancedBtn = document.getElementById('toggleAdvancedBtn');
 const advancedSection = document.getElementById('advancedSection');
+const toggleModeratorBtn = document.getElementById('toggleModeratorId');
+const toggleChannelBtn = document.getElementById('toggleChannelToken');
 
 function updateAdvancedToggleLabel() {
   const lang = (langEl?.value || 'es');
@@ -322,3 +324,43 @@ form.addEventListener('submit', async (e) => {
     resultEl.textContent = `${d.errorPrefix}${err?.message || d.unknownError}`;
   }
 });
+
+
+function currentLang() {
+  return (langEl?.value || 'es');
+}
+function labelForState(isHidden) {
+  const lang = currentLang();
+  const showTxt = lang === 'en' ? 'Show' : 'Mostrar';
+  const hideTxt = lang === 'en' ? 'Hide' : 'Ocultar';
+  return isHidden ? showTxt : hideTxt;
+}
+function updateRevealButtonsLabel() {
+  if (toggleModeratorBtn && moderatorIdEl) {
+    const hidden = moderatorIdEl.type === 'password';
+    toggleModeratorBtn.textContent = labelForState(hidden);
+  }
+  if (toggleChannelBtn && channelTokenEl) {
+    const hidden = channelTokenEl.type === 'password';
+    toggleChannelBtn.textContent = labelForState(hidden);
+  }
+}
+
+// Inicial: aseguro tipo password y etiqueta correcta
+if (moderatorIdEl) moderatorIdEl.type = 'password';
+if (channelTokenEl) channelTokenEl.type = 'password';
+updateRevealButtonsLabel();
+
+// Listeners de revelar/ocultar
+if (toggleModeratorBtn && moderatorIdEl) {
+  toggleModeratorBtn.addEventListener('click', () => {
+    moderatorIdEl.type = (moderatorIdEl.type === 'password') ? 'text' : 'password';
+    updateRevealButtonsLabel();
+  });
+}
+if (toggleChannelBtn && channelTokenEl) {
+  toggleChannelBtn.addEventListener('click', () => {
+    channelTokenEl.type = (channelTokenEl.type === 'password') ? 'text' : 'password';
+    updateRevealButtonsLabel();
+  });
+}
