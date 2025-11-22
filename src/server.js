@@ -94,7 +94,8 @@ app.get('/auth/login', (req, res) => {
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req));
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('scope', 'user:read:email user:read:follows');
-  res.redirect(authUrl.toString());
+  res.set('Cache-Control', 'no-store');
+  res.status(302).set('Location', authUrl.toString()).send('Redirecting to Twitch...');
 });
 
 // Login canal/moderador para followers
@@ -105,7 +106,8 @@ app.get('/auth/channel/login', (req, res) => {
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req).replace('/auth/callback', '/auth/channel/callback'));
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('scope', 'moderator:read:followers');
-  res.redirect(authUrl.toString());
+  res.set('Cache-Control', 'no-store');
+  res.status(302).set('Location', authUrl.toString()).send('Redirecting to Twitch...');
 });
 
 app.get('/auth/callback', async (req, res) => {
