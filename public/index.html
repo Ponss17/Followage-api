@@ -1,122 +1,129 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Followage API – Demo</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/styles.css" />
-  </head>
-  <body>
-    <header class="hero">
-      <div class="container">
-        <h1>LosPerrisFollowage API</h1>
-        <p>Consulta cuánto tiempo <em>un usuario</em> lleva siguiendo tu <em>canal</em> en Twitch.</p>
-        <div class="cta">
-          <a class="btn" href="#demo">Probar ahora</a>
-          <a class="btn btn-secondary" href="#docs">Ver pasos</a>
-        </div>
-        <div class="auth-box" id="authBox">
-          <span id="authStatus">No autenticado</span>
-          <button class="btn" id="loginBtn">Iniciar sesión con Twitch</button>
-          <button class="btn btn-secondary" id="logoutBtn" style="display:none">Cerrar sesión</button>
-        </div>
-        <div class="auth-box" id="channelAuthBox">
-          <span id="channelAuthStatus">Canal no autenticado</span>
-          <button class="btn" id="channelLoginBtn">Iniciar sesión Canal/Moderador</button>
-          <button class="btn btn-secondary" id="channelLogoutBtn" style="display:none">Cerrar sesión Canal</button>
-        </div>
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Followage API – Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body>
+  <header class="hero">
+    <div class="container">
+      <h1>LosPerrisFollowage API</h1>
+      <p>Consulta cuánto tiempo <em>un usuario</em> lleva siguiendo tu <em>canal</em> en Twitch.</p>
+      <div class="cta">
+        <a class="btn" href="#demo">Probar ahora</a>
+        <a class="btn btn-secondary" href="#docs">Ver pasos</a>
       </div>
-    </header>
+      <div class="auth-box" id="authBox">
+        <span id="authStatus">No autenticado</span>
+        <button class="btn" id="loginBtn">Iniciar sesión con Twitch</button>
+        <button class="btn btn-secondary" id="logoutBtn" style="display:none">Cerrar sesión</button>
+      </div>
+      <div class="auth-box" id="channelAuthBox">
+        <span id="channelAuthStatus">Canal no autenticado</span>
+        <button class="btn" id="channelLoginBtn">Iniciar sesión Canal/Moderador</button>
+        <button class="btn btn-secondary" id="channelLogoutBtn" style="display:none">Cerrar sesión Canal</button>
+      </div>
+    </div>
+  </header>
 
-    <main class="container">
-      <section id="demo" class="card">
-        <h2>Demo rápida</h2>
-        <p id="demoNotice" class="notice" style="display:none">
-          Modo usuario: inicia sesión con Twitch para usar tu cuenta como <code>Usuario</code>.
-        </p>
-        <p id="channelNotice" class="notice" style="display:none">
-          Si un canal/moderador inicia sesión aquí, su canal queda disponible públicamente en este servidor: cualquiera podrá consultar su followage usando el endpoint estilo Garret.
-        </p>
-        <form id="followage-form">
-          <div class="grid">
-            <label>
-              Usuario $(user)/$(touser)
-              <input type="text" id="viewer" placeholder="Ingresa el usuario o se completará tras login" required />
-              <small class="hint">Si el canal/moderador está autenticado, puedes consultar cualquier usuario sin login de usuario.</small>
-            </label>
-            <label>
-              Canal $(channel)
-              <input type="text" id="channel" placeholder="p.ej. somechannel" required />
-            </label>
-          </div>
-          <div class="grid">
-            <label>
-              Idioma
-              <select id="lang">
-                <option value="es" selected>Español</option>
-                <option value="en">English</option>
-              </select>
-            </label>
-            <label>
-              Formato
-              <select id="format">
-                <option value="text" selected>Texto</option>
-                <option value="json">JSON</option>
-              </select>
-            </label>
-          </div>
-          <div class="grid">
-            <label>
-              Moderator ID (opcional)
-              <input type="text" id="moderatorId" placeholder="ID de moderador (numérico)" />
-              <small class="hint">Se completa automáticamente tras iniciar sesión Canal/Moderador; opcional.</small>
-            </label>
-            <label>
-              Token del canal/moderador (opcional)
-              <input type="text" id="channelToken" placeholder="Pegue aquí el OAuth del mod" />
-              <small class="hint">Se completa automáticamente tras iniciar sesión Canal/Moderador; opcional. Usa scope <code>moderator:read:followers</code>.</small>
-            </label>
-          </div>
-          <button class="btn" type="submit">Generar</button>
-        </form>
-        <div id="result" class="result"></div>
-        <div id="url-block" class="result" style="display:none">
-          <small id="urlPersonalLabel">URL personalizada (solo follow del usuario):</small>
-          <div><code id="urlExample"></code></div>
+  <main class="container">
+    <section id="demo" class="card">
+      <h2>Demo rápida</h2>
+      <p id="demoNotice" class="notice" style="display:none">
+        Modo usuario: inicia sesión con Twitch para usar tu cuenta como <code>Usuario</code>.
+      </p>
+      <p id="channelNotice" class="notice" style="display:none">
+        Si un canal/moderador inicia sesión aquí, su canal queda disponible públicamente en este servidor: cualquiera
+        podrá consultar su followage usando el endpoint estilo Garret.
+      </p>
+      <form id="followage-form">
+        <div class="grid">
+          <label>
+            Usuario $(user)/$(touser)
+            <input type="text" id="viewer" placeholder="Ingresa el usuario o se completará tras login" required />
+            <small class="hint">Si el canal/moderador está autenticado, puedes consultar cualquier usuario sin login de
+              usuario.</small>
+          </label>
+          <label>
+            Canal $(channel)
+            <input type="text" id="channel" placeholder="p.ej. somechannel" required />
+          </label>
         </div>
-        <div id="url-generic-block" class="result" style="display:none">
-          <small id="urlGenericLabel">URL genérica (Nightbot; para cualquier usuario):</small>
-          <div><code id="urlGenericExample"></code></div>
+        <div class="grid">
+          <label>
+            Idioma
+            <select id="lang">
+              <option value="es" selected>Español</option>
+              <option value="en">English</option>
+            </select>
+          </label>
+          <label>
+            Formato
+            <select id="format">
+              <option value="text" selected>Texto</option>
+              <option value="json">JSON</option>
+            </select>
+          </label>
         </div>
-      </section>
+        <div class="grid">
+          <label>
+            Moderator ID (opcional)
+            <input type="text" id="moderatorId" placeholder="ID de moderador (numérico)" />
+            <small class="hint">Se completa automáticamente tras iniciar sesión Canal/Moderador; opcional.</small>
+          </label>
+          <label>
+            Token del canal/moderador (opcional)
+            <input type="text" id="channelToken" placeholder="Pegue aquí el OAuth del mod" />
+            <small class="hint">Se completa automáticamente tras iniciar sesión Canal/Moderador; opcional. Usa scope
+              <code>moderator:read:followers</code>.</small>
+          </label>
+        </div>
+        <button class="btn" type="submit">Generar</button>
+      </form>
+      <div id="result" class="result"></div>
+      <div id="url-block" class="result" style="display:none">
+        <small id="urlPersonalLabel">URL personalizada (solo follow del usuario):</small>
+        <div><code id="urlExample"></code></div>
+      </div>
+      <div id="url-generic-block" class="result" style="display:none">
+        <small id="urlGenericLabel">URL genérica (Nightbot; para cualquier usuario):</small>
+        <div><code id="urlGenericExample"></code></div>
+      </div>
+    </section>
 
-      <section class="card">
-        <h2>Características</h2>
-        <ul>
-          <li><span class="icon">✓</span> Login Canal/Moderador cachea <code>channel_id</code> y <code>token</code>; autocompleta Moderator ID y Token.</li>
-          <li><span class="icon">✓</span> Genera y muestra URL personalizada y genérica (Nightbot) envueltas como <code>$(urlfetch ...)</code>.</li>
-          <li><span class="icon">✓</span> ES/EN: etiquetas de URL y respuestas en el idioma seleccionado.</li>
-          <li><span class="icon">✓</span> Endpoint público: <code>/twitch/followage/$(channel)/$(touser)</code> con valores por defecto útiles.</li>
-          <li><span class="icon">✓</span> Endpoint privado: <code>/api/followage</code> usa la sesión del usuario autenticado.</li>
-        </ul>
-      </section>
+    <section class="card">
+      <h2>Características</h2>
+      <ul>
+        <li><span class="icon">✓</span> Login Canal/Moderador cachea <code>channel_id</code> y <code>token</code>;
+          autocompleta Moderator ID y Token.</li>
+        <li><span class="icon">✓</span> Genera y muestra URL personalizada y genérica (Nightbot) envueltas como
+          <code>$(urlfetch ...)</code>.</li>
+        <li><span class="icon">✓</span> ES/EN: etiquetas de URL y respuestas en el idioma seleccionado.</li>
+        <li><span class="icon">✓</span> Endpoint público: <code>/twitch/followage/$(channel)/$(touser)</code> con
+          valores por defecto útiles.</li>
+        <li><span class="icon">✓</span> Endpoint privado: <code>/api/followage</code> usa la sesión del usuario
+          autenticado.</li>
+      </ul>
+    </section>
 
-      <section id="docs" class="card">
-        <h2>Pasos de uso</h2>
-        <ol class="step-list">
-          <li>Iniciar sesión de Usuario con Twitch (opcional si el canal/mod está autenticado).</li>
-          <li>Iniciar sesión de Canal/Moderador para habilitar consultas públicas y autocompletar Moderator ID y Token.</li>
-          <li>Agregar Usuario (touser) y Canal (channel) en el formulario.</li>
-          <li>Elegir Idioma (ES/EN) y Formato (Texto/JSON).</li>
-          <li>Presionar “Generar” para ver el resultado y las URLs copiable.</li>
-          <li>Copiar el comando Nightbot desde “URL genérica (Nightbot)” y pegarlo en tu bot.</li>
-          <li>(Opcional) Verificar la salud del servicio en <code>/health</code>.</li>
-        </ol>
-        <li>Consulta desde la demo o usando los endpoints adecuados.</li>
-        <li>Salud del servicio: <code>/health</code>.</li>
+    <section id="docs" class="card">
+      <h2>Pasos de uso</h2>
+      <ol class="step-list">
+        <li>Iniciar sesión de Usuario con Twitch (opcional si el canal/mod está autenticado).</li>
+        <li>Iniciar sesión de Canal/Moderador para habilitar consultas públicas y autocompletar Moderator ID y Token.
+        </li>
+        <li>Agregar Usuario (touser) y Canal (channel) en el formulario.</li>
+        <li>Elegir Idioma (ES/EN) y Formato (Texto/JSON).</li>
+        <li>Presionar “Generar” para ver el resultado y las URLs copiable.</li>
+        <li>Copiar el comando Nightbot desde “URL genérica (Nightbot)” y pegarlo en tu bot.</li>
+        <li>(Opcional) Verificar la salud del servicio en <code>/health</code>.</li>
       </ol>
 
       <hr />
@@ -127,12 +134,14 @@
         <li><code>format</code>: <code>ymdhis</code> por defecto; <code>json</code> alternativo.</li>
         <li><code>ping</code>: <code>false</code> por defecto; añade menciones si es <code>true</code>.</li>
         <li><code>lang</code>: <code>es</code> por defecto en texto; <code>en</code> opcional.</li>
-        <li><code>moderatorId</code> y <code>token</code> (opcionales): si el canal/moderador está autenticado aquí, normalmente no se requieren.</li>
+        <li><code>moderatorId</code> y <code>token</code> (opcionales): si el canal/moderador está autenticado aquí,
+          normalmente no se requieren.</li>
       </ul>
       <p>Ejemplos Nightbot (listos para copiar):</p>
       <pre><code>$(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es)</code></pre>
       <pre><code>$(urlfetch https://followage-api.onrender.com/twitch/followage/$(channel)/$(touser)?format=json&lang=en&ping=true)</code></pre>
-      <p class="notice">Aviso: si incluyes <code>token</code> en la URL quedará visible en el comando. Usa un token dedicado/rotatorio y revócalo si es necesario.</p>
+      <p class="notice">Aviso: si incluyes <code>token</code> en la URL quedará visible en el comando. Usa un token
+        dedicado/rotatorio y revócalo si es necesario.</p>
     </section>
 
     <section class="card muted">
@@ -152,4 +161,6 @@
   </footer>
 
   <script src="/app.js"></script>
-  </html>
+</body>
+
+</html>
