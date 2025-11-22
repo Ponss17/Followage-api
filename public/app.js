@@ -20,6 +20,32 @@ const channelLogoutBtn = document.getElementById('channelLogoutBtn');
 const channelNotice = document.getElementById('channelNotice');
 const moderatorIdEl = document.getElementById('moderatorId');
 const channelTokenEl = document.getElementById('channelToken');
+const toggleAdvancedBtn = document.getElementById('toggleAdvancedBtn');
+const advancedSection = document.getElementById('advancedSection');
+
+function updateAdvancedToggleLabel() {
+  const lang = (langEl?.value || 'es');
+  const showTxt = lang === 'en' ? 'Show channel/mod options' : 'Mostrar opciones canal/mod';
+  const hideTxt = lang === 'en' ? 'Hide channel/mod options' : 'Ocultar opciones canal/mod';
+  if (!toggleAdvancedBtn) return;
+  const isHidden = !advancedSection || advancedSection.style.display === 'none' || advancedSection.hidden;
+  toggleAdvancedBtn.textContent = isHidden ? showTxt : hideTxt;
+}
+
+if (toggleAdvancedBtn && advancedSection) {
+  updateAdvancedToggleLabel();
+  toggleAdvancedBtn.addEventListener('click', () => {
+    const isHidden = advancedSection.style.display === 'none' || advancedSection.hidden;
+    if (isHidden) {
+      advancedSection.style.display = '';
+      advancedSection.hidden = false;
+    } else {
+      advancedSection.style.display = 'none';
+      advancedSection.hidden = true;
+    }
+    updateAdvancedToggleLabel();
+  });
+}
 let isAuthenticated = false;
 let isChannelAuthenticated = false;
 
@@ -189,11 +215,13 @@ refreshChannelAuth();
 if (langEl) {
   langEl.addEventListener('change', () => {
     updateUrlLabels();
+    updateAdvancedToggleLabel();
     refreshAuth();
     refreshChannelAuth();
   });
 }
 updateUrlLabels();
+updateAdvancedToggleLabel();
 
 // Dentro del submit, cambia el base de las URLs para usar tu dominio actual (Vercel)
 form.addEventListener('submit', async (e) => {
