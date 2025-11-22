@@ -22,6 +22,7 @@ const moderatorIdEl = document.getElementById('moderatorId');
 const channelTokenEl = document.getElementById('channelToken');
 const toggleAdvancedBtn = document.getElementById('toggleAdvancedBtn');
 const advancedSection = document.getElementById('advancedSection');
+// Botones inline dentro del input
 const toggleModeratorBtn = document.getElementById('toggleModeratorId');
 const toggleChannelBtn = document.getElementById('toggleChannelToken');
 
@@ -336,21 +337,19 @@ function labelForState(isHidden) {
 }
 function updateRevealButtonsLabel() {
   if (toggleModeratorBtn && moderatorIdEl) {
-    const hidden = moderatorIdEl.type === 'password';
-    toggleModeratorBtn.textContent = labelForState(hidden);
+    toggleModeratorBtn.textContent = labelForState(moderatorIdEl.type === 'password');
   }
   if (toggleChannelBtn && channelTokenEl) {
-    const hidden = channelTokenEl.type === 'password';
-    toggleChannelBtn.textContent = labelForState(hidden);
+    toggleChannelBtn.textContent = labelForState(channelTokenEl.type === 'password');
   }
 }
 
-// asegura tipo password y etiqueta correcta
+// Inicial: valores ocultos
 if (moderatorIdEl) moderatorIdEl.type = 'password';
 if (channelTokenEl) channelTokenEl.type = 'password';
 updateRevealButtonsLabel();
 
-// Listeners de revelar/ocultar
+// Listeners mostrar/ocultar por campo
 if (toggleModeratorBtn && moderatorIdEl) {
   toggleModeratorBtn.addEventListener('click', () => {
     moderatorIdEl.type = (moderatorIdEl.type === 'password') ? 'text' : 'password';
@@ -364,7 +363,7 @@ if (toggleChannelBtn && channelTokenEl) {
   });
 }
 
-// Selección de idioma: actualiza etiquetas del botón de revelar
+// Selección de idioma: actualiza etiquetas del botón inline
 if (langEl) {
   langEl.addEventListener('change', () => {
     updateUrlLabels();

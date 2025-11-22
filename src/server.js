@@ -290,7 +290,6 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
   const viewer = req.params.viewer?.toString().trim();
   const format = (req.query.format || 'ymdhis').toString().trim();
   const ping = ((req.query.ping || 'false').toString().trim().toLowerCase() === 'true');
-  const moderatorId = (req.query.moderatorId || '').toString().trim();
   const lang = (req.query.lang || 'en').toString().trim();
   const tokenParam = (req.query.token || req.query.mod_token || '').toString().trim();
 
