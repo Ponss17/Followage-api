@@ -230,7 +230,7 @@ form.addEventListener('submit', async (e) => {
       garretUrlForDisplay = displayUrl.toString();
 
       // URL genérica para Nightbot 
-      const genericBase = 'https://followage-api.onrender.com';
+      const genericBase = 'https://www.losperris.site';
       const genericUrl = new URL(`/twitch/followage/$(channel)/$(user)`, genericBase);
       genericUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
       genericUrl.searchParams.set('ping', 'false');
