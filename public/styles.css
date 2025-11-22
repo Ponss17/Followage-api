@@ -212,3 +212,12 @@ input:focus-visible, select:focus-visible {
 .reveal-btn:hover {
   background: #2b3560;
 }
+.hero .site-logo {
+  width: 72px;
+  height: 72px;
+  border-radius: 14px;
+  display: block;
+  margin: 0 auto 10px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+  object-fit: cover;
+}
