@@ -2,7 +2,6 @@
   publish = "public"
   command = ""
 
-# Proxy: rutas del backend hacia Render (reemplaza por tu dominio real)
 [[redirects]]
   from = "/auth/*"
   to = "https://TU_BACKEND/auth/:splat"
@@ -21,7 +20,6 @@
   status = 200
   force = true
 
-# Fallback SPA (si luego añades rutas de front)
 [[redirects]]
   from = "/*"
   to = "/index.html"
