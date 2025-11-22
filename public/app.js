@@ -184,8 +184,8 @@ form.addEventListener('submit', async (e) => {
     let garretUrlForDisplay;
     let genericUrlForDisplay;
     {
-      // URL 
-      const displayBase = 'https://followage-api.onrender.com';
+      // URL base dinámico: usa el dominio actual (Vercel)
+      const displayBase = window.location.origin;
       const displayUrl = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, displayBase);
       displayUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
       displayUrl.searchParams.set('ping', 'false');

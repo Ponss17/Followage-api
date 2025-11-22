@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import { getFollowageText, getFollowageJson, getFollowageTextByPattern } from './twitch.js';
+import serverlessHttp from 'serverless-http';
 
 dotenv.config();
 
@@ -392,12 +393,12 @@ app.get('/twitch/chatter/:streamer', async (req, res) => {
   }
 });
 
-// Exportar el app para Netlify Functions
+// Exportar el app para serverless (Vercel)
 export default app;
 
-// Escuchar solo en entorno local (no en Netlify Functions)
-const isNetlify = process.env.NETLIFY === 'true' || process.env.LAMBDA_TASK_ROOT != null;
-if (!isNetlify) {
+// Solo escuchar en local (no en Vercel Functions)
+const isServerless = process.env.NETLIFY === 'true' || process.env.LAMBDA_TASK_ROOT != null || process.env.VERCEL === '1';
+if (!isServerless) {
   app.listen(port, () => {
     console.log(`Followage API escuchando en http://localhost:${port}`);
   });
