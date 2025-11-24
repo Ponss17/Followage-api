@@ -51,7 +51,6 @@ if (toggleAdvancedBtn && advancedSection) {
 let isAuthenticated = false;
 let isChannelAuthenticated = false;
 
-// Función de traducción que faltaba
 function getDict() {
   const langEl = document.getElementById('lang');
   const lang = langEl?.value || 'es';
@@ -86,7 +85,6 @@ function getDict() {
   return translations[lang] || translations.es;
 }
 
-// Ajuste para las etiquetas de URL
 const i18n = {
   es: {
     urlPersonal: 'URL personalizada (solo follow del usuario):',
@@ -249,7 +247,6 @@ form.addEventListener('submit', async (e) => {
     let garretUrlForDisplay;
     let genericUrlForDisplay;
     {
-      // Base Vercel 
       const displayBase = window.location.origin;
       const displayUrl = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, displayBase);
       displayUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
@@ -268,7 +265,7 @@ form.addEventListener('submit', async (e) => {
       if (channelToken) genericUrl.searchParams.set('token', channelToken);
       genericUrlForDisplay = genericUrl.toString();
 
-      // URL local para consultar 
+      // URL local
       const fetchUrl = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, window.location.origin);
       fetchUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
       fetchUrl.searchParams.set('ping', 'false');
@@ -348,7 +345,7 @@ if (moderatorIdEl) moderatorIdEl.type = 'password';
 if (channelTokenEl) channelTokenEl.type = 'password';
 updateRevealButtonsLabel();
 
-// Listeners mostrar/ocultar por campo
+// mostrar/ocultar
 if (toggleModeratorBtn && moderatorIdEl) {
   toggleModeratorBtn.addEventListener('click', () => {
     moderatorIdEl.type = (moderatorIdEl.type === 'password') ? 'text' : 'password';

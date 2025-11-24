@@ -1,5 +1,4 @@
 
-// Check authentication status
 async function checkClipsAuth() {
     try {
         const resp = await fetch('/clips/me');
@@ -16,7 +15,7 @@ async function checkClipsAuth() {
             if (commandsSection) {
                 commandsSection.style.display = 'block';
 
-                // Actualizar el User ID y Access Token (ahora son inputs)
+                // User ID y Access Token
                 document.getElementById('userId').value = data.clips.id;
                 document.getElementById('accessToken').value = data.clips.access_token;
 
@@ -49,7 +48,6 @@ async function checkClipsAuth() {
     document.getElementById('clipsLogoutBtn').style.display = 'none';
     document.getElementById('clipsNotice').style.display = 'block';
 
-    // Ocultar la sección de comandos
     const commandsSection = document.getElementById('commands');
     if (commandsSection) {
         commandsSection.style.display = 'none';
@@ -58,7 +56,6 @@ async function checkClipsAuth() {
     return false;
 }
 
-// Función para alternar visibilidad de inputs
 function setupToggle(btnId, inputId) {
     const btn = document.getElementById(btnId);
     const input = document.getElementById(inputId);
@@ -75,7 +72,7 @@ function setupToggle(btnId, inputId) {
     }
 }
 
-// Configurar toggles
+// toggles
 setupToggle('toggleUserId', 'userId');
 setupToggle('toggleAccessToken', 'accessToken');
 
@@ -95,7 +92,7 @@ document.getElementById('clipsLogoutBtn').addEventListener('click', async () => 
     }
 });
 
-// Clip creacion
+// Clip 
 document.getElementById('clips-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
@@ -138,5 +135,7 @@ document.getElementById('clips-form').addEventListener('submit', async (e) => {
     }
 });
 
-// Initialize
 checkClipsAuth();
+
+
+// vivan las chichonas :)
