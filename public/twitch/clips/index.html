@@ -120,12 +120,36 @@
     </section>
 
     <section class="card muted">
-      <h2>Notas</h2>
+      <h2>Permisos y Uso</h2>
+      <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+          <h3>1. Opción Manual (Web)</h3>
+          <p>Usa el formulario de arriba ("Crear Clip").</p>
+          <ul>
+            <li><strong>Tu Canal:</strong> Deja el campo vacío.</li>
+            <li><strong>Otro Canal:</strong> Escribe el nombre del canal.</li>
+            <li><strong>Requisito:</strong> Tu usuario debe tener permiso para hacer clips en ese canal (ser el dueño,
+              moderador, o que el canal tenga clips públicos).</li>
+          </ul>
+        </div>
+        <div>
+          <h3>2. Comandos de Chat</h3>
+          <p>Usa los comandos generados en tu bot.</p>
+          <ul>
+            <li><strong>Tu Canal:</strong> El comando usa tu token automáticamente.</li>
+            <li><strong>Otro Canal:</strong> Si eres Mod en otro canal y usas el comando ahí, intentará crear el clip
+              usando TU token.</li>
+            <li><strong>Requisito:</strong> Igual que la web, tu usuario debe tener permiso en ese canal.</li>
+          </ul>
+        </div>
+      </div>
+      <br>
+      <h3>Notas Técnicas</h3>
       <ul>
-        <li>Requiere autenticación con scope <code>clips:edit</code></li>
-        <li>Los clips tardan unos segundos en procesarse</li>
-        <li>Se recomienda un cooldown de 5-10 segundos en comandos de chat</li>
-        <li>Puedes iniciar sesión con una cuenta de bot para que los clips aparezcan bajo ese nombre</li>
+        <li>Requiere autenticación con scope <code>clips:edit</code> (ya incluido al iniciar sesión).</li>
+        <li>Los clips tardan unos segundos en procesarse.</li>
+        <li>Se recomienda un cooldown de 5-10 segundos en comandos de chat.</li>
+        <li>Puedes iniciar sesión con una cuenta de bot para que los clips aparezcan creados por ese bot.</li>
       </ul>
     </section>
   </main>
