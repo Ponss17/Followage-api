@@ -16,9 +16,9 @@ async function checkClipsAuth() {
             if (commandsSection) {
                 commandsSection.style.display = 'block';
 
-                // Actualizar el User ID y Access Token
-                document.getElementById('userId').textContent = data.clips.id;
-                document.getElementById('accessToken').textContent = data.clips.access_token;
+                // Actualizar el User ID y Access Token (ahora son inputs)
+                document.getElementById('userId').value = data.clips.id;
+                document.getElementById('accessToken').value = data.clips.access_token;
 
                 // Generar los comandos
                 const baseUrl = window.location.origin;
@@ -57,6 +57,27 @@ async function checkClipsAuth() {
 
     return false;
 }
+
+// Función para alternar visibilidad de inputs
+function setupToggle(btnId, inputId) {
+    const btn = document.getElementById(btnId);
+    const input = document.getElementById(inputId);
+    if (btn && input) {
+        btn.addEventListener('click', () => {
+            if (input.type === 'password') {
+                input.type = 'text';
+                btn.textContent = 'Ocultar';
+            } else {
+                input.type = 'password';
+                btn.textContent = 'Mostrar';
+            }
+        });
+    }
+}
+
+// Configurar toggles
+setupToggle('toggleUserId', 'userId');
+setupToggle('toggleAccessToken', 'accessToken');
 
 // Login boton
 document.getElementById('clipsLoginBtn').addEventListener('click', () => {
