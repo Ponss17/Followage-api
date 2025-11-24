@@ -1,4 +1,3 @@
-// Clips page JavaScript
 
 // Check authentication status
 async function checkClipsAuth() {
@@ -11,6 +10,19 @@ async function checkClipsAuth() {
             document.getElementById('clipsLoginBtn').style.display = 'none';
             document.getElementById('clipsLogoutBtn').style.display = 'inline-block';
             document.getElementById('clipsNotice').style.display = 'none';
+
+            // Mostrar el token y comandos
+            if (data.clips.clip_token) {
+                const baseUrl = window.location.origin;
+                const tokenUrl = `${baseUrl}/twitch/clips/create/${data.clips.clip_token}`;
+
+                document.getElementById('clipTokenUrl').textContent = tokenUrl;
+                document.getElementById('nightbotCommand').textContent = `$(urlfetch ${tokenUrl}?channel=$(channel))`;
+                document.getElementById('streamElementsCommand').textContent = `$(customapi.${tokenUrl}?channel=$(channel))`;
+                document.getElementById('streamlabsCommand').textContent = `$readapi(${tokenUrl}?channel=$mychannel)`;
+                document.getElementById('tokenSection').style.display = 'block';
+            }
+
             return true;
         }
     } catch (err) {
@@ -21,15 +33,16 @@ async function checkClipsAuth() {
     document.getElementById('clipsLoginBtn').style.display = 'inline-block';
     document.getElementById('clipsLogoutBtn').style.display = 'none';
     document.getElementById('clipsNotice').style.display = 'block';
+    document.getElementById('tokenSection').style.display = 'none';
     return false;
 }
 
-// Login button
+// Login boton
 document.getElementById('clipsLoginBtn').addEventListener('click', () => {
     window.location.href = '/auth/clips/login';
 });
 
-// Logout button
+// Logout boton
 document.getElementById('clipsLogoutBtn').addEventListener('click', async () => {
     try {
         await fetch('/auth/clips/logout', { method: 'POST' });
@@ -40,7 +53,7 @@ document.getElementById('clipsLogoutBtn').addEventListener('click', async () => 
     }
 });
 
-// Clip creation form
+// Clip creacion
 document.getElementById('clips-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 

@@ -195,7 +195,6 @@ export async function createClip({ broadcasterId, userToken }) {
   return {
     id: clip.id,
     edit_url: clip.edit_url,
-    // La URL del clip se construye a partir del ID
     url: `https://clips.twitch.tv/${clip.id}`
   };
 }
