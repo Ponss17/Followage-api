@@ -36,11 +36,6 @@ async function checkClipsAuth() {
                 // Streamlabs Chatbot
                 const slCommand = `$readapi(${baseUrl}/api/clips/create?user_id=${userId}&token=${token}&channel=$mychannel)`;
                 document.getElementById('streamlabsCommand').textContent = slCommand;
-
-                // Actualizar las URLs completas en las secciones de abajo
-                document.getElementById('urlStreamElements').textContent = seCommand;
-                document.getElementById('urlNightbot').textContent = nbCommand;
-                document.getElementById('urlStreamlabs').textContent = slCommand;
             }
 
             return true;

@@ -65,14 +65,15 @@
 
     <!-- Sección 2: Comandos para Bots de Chat -->
     <section id="commands" class="card" style="display:none">
-      <h2>Custom API command (for chat)!</h2>
+      <h2>¡Comando de API personalizado (para chat)!</h2>
       <p>
-        You can use this as a command in chat to create and return a clip. Currently, there is no threshold vote system,
-        so using the command once will generate and return a clip. Therefore, consider making this command sub and/or
-        mod-only.
-        Keep in mind that creating a clip can take a few seconds, so placing a short 5-10 second cooldown on the command
-        is
-        also recommended to prevent users generating duplicate clips.
+        Puedes usar esto como un comando en el chat para crear y devolver un clip. Actualmente, no hay un sistema de
+        votación,
+        así que usar el comando una vez generará y devolverá un clip. Por lo tanto, considera hacer este comando solo
+        para
+        suscriptores y/o moderadores. Ten en cuenta que crear un clip puede tomar unos segundos, así que se recomienda
+        colocar un tiempo de espera (cooldown) de 5-10 segundos en el comando para evitar que los usuarios generen clips
+        duplicados.
       </p>
 
       <h3>Tu Token e ID</h3>
@@ -90,29 +91,27 @@
 
       <h3>Streamlabs Chatbot</h3>
       <pre><code id="streamlabsCommand">-</code></pre>
-      <li>Los clips tardan unos segundos en procesarse</li>
-      <li>Se recomienda un cooldown de 5-10 segundos en comandos de chat</li>
-      <li>Puedes iniciar sesión con una cuenta de bot para que los clips aparezcan bajo ese nombre</li>
+
+      <p class="notice">
+        <strong>Nota:</strong> No necesitas cambiar <code>$(channel)</code> o <code>$mychannel</code>,
+        estos se reemplazarán automáticamente con el nombre del canal donde se agregue.
+      </p>
+
+      <ul>
+        <li><span class="icon">✓</span> Perfecto para comandos de chat en Nightbot/StreamElements/Streamlabs</li>
+        <li><span class="icon">✓</span> Rate limiting: 3 clips cada 5 minutos</li>
+        <li><span class="icon">⚠️</span> Guarda tu token de forma segura, no lo compartas públicamente</li>
       </ul>
-      <hr style="margin: 30px 0; border: none; border-top: 1px solid #3a3a4e;" />
+    </section>
 
-      <h3>URLs Generadas</h3>
-      <p>Copia estas URLs completas para usar en tus comandos de chat:</p>
-
-      <div id="url-streamelements-block" class="result" style="margin-bottom: 15px;">
-        <small>StreamElements:</small>
-        <div><code id="urlStreamElements"></code></div>
-      </div>
-
-      <div id="url-nightbot-block" class="result" style="margin-bottom: 15px;">
-        <small>Nightbot:</small>
-        <div><code id="urlNightbot"></code></div>
-      </div>
-
-      <div id="url-streamlabs-block" class="result" style="margin-bottom: 15px;">
-        <small>Streamlabs Chatbot:</small>
-        <div><code id="urlStreamlabs"></code></div>
-      </div>
+    <section class="card muted">
+      <h2>Notas</h2>
+      <ul>
+        <li>Requiere autenticación con scope <code>clips:edit</code></li>
+        <li>Los clips tardan unos segundos en procesarse</li>
+        <li>Se recomienda un cooldown de 5-10 segundos en comandos de chat</li>
+        <li>Puedes iniciar sesión con una cuenta de bot para que los clips aparezcan bajo ese nombre</li>
+      </ul>
     </section>
   </main>
 
