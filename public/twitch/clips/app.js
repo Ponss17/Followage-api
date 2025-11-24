@@ -11,16 +11,36 @@ async function checkClipsAuth() {
             document.getElementById('clipsLogoutBtn').style.display = 'inline-block';
             document.getElementById('clipsNotice').style.display = 'none';
 
-            // Mostrar el token y comandos
-            if (data.clips.clip_token) {
-                const baseUrl = window.location.origin;
-                const tokenUrl = `${baseUrl}/twitch/clips/create/${data.clips.clip_token}`;
+            // Mostrar la sección de comandos
+            const commandsSection = document.getElementById('commands');
+            if (commandsSection) {
+                commandsSection.style.display = 'block';
 
-                document.getElementById('clipTokenUrl').textContent = tokenUrl;
-                document.getElementById('nightbotCommand').textContent = `$(urlfetch ${tokenUrl}?channel=$(channel))`;
-                document.getElementById('streamElementsCommand').textContent = `$(customapi.${tokenUrl}?channel=$(channel))`;
-                document.getElementById('streamlabsCommand').textContent = `$readapi(${tokenUrl}?channel=$mychannel)`;
-                document.getElementById('tokenSection').style.display = 'block';
+                // Actualizar el User ID y Access Token
+                document.getElementById('userId').textContent = data.clips.id;
+                document.getElementById('accessToken').textContent = data.clips.access_token;
+
+                // Generar los comandos
+                const baseUrl = window.location.origin;
+                const userId = data.clips.id;
+                const token = data.clips.access_token;
+
+                // StreamElements
+                const seCommand = `$(customapi.${baseUrl}/api/clips/create?user_id=${userId}&token=${token}&channel=$(channel))`;
+                document.getElementById('streamElementsCommand').textContent = seCommand;
+
+                // Nightbot
+                const nbCommand = `$(urlfetch ${baseUrl}/api/clips/create?user_id=${userId}&token=${token}&channel=$(channel))`;
+                document.getElementById('nightbotCommand').textContent = nbCommand;
+
+                // Streamlabs Chatbot
+                const slCommand = `$readapi(${baseUrl}/api/clips/create?user_id=${userId}&token=${token}&channel=$mychannel)`;
+                document.getElementById('streamlabsCommand').textContent = slCommand;
+
+                // Actualizar las URLs completas en las secciones de abajo
+                document.getElementById('urlStreamElements').textContent = seCommand;
+                document.getElementById('urlNightbot').textContent = nbCommand;
+                document.getElementById('urlStreamlabs').textContent = slCommand;
             }
 
             return true;
@@ -33,7 +53,13 @@ async function checkClipsAuth() {
     document.getElementById('clipsLoginBtn').style.display = 'inline-block';
     document.getElementById('clipsLogoutBtn').style.display = 'none';
     document.getElementById('clipsNotice').style.display = 'block';
-    document.getElementById('tokenSection').style.display = 'none';
+
+    // Ocultar la sección de comandos
+    const commandsSection = document.getElementById('commands');
+    if (commandsSection) {
+        commandsSection.style.display = 'none';
+    }
+
     return false;
 }
 
@@ -85,7 +111,9 @@ document.getElementById('clips-form').addEventListener('submit', async (e) => {
         resultDiv.style.color = '#4ade80';
 
         document.getElementById('clipUrl').textContent = data.url;
+        document.getElementById('clipUrl').href = data.url;
         document.getElementById('clipEditUrl').textContent = data.edit_url;
+        document.getElementById('clipEditUrl').href = data.edit_url;
         urlBlock.style.display = 'block';
 
     } catch (err) {

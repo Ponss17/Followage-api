@@ -446,7 +446,19 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
 
 app.post('/api/clips/create', async (req, res) => {
   try {
-    const userToken = req.clips?.access_token;
+    // Intentar obtener el token de los parámetros de query o del usuario autenticado
+    const queryToken = (req.query.token || '').toString().trim();
+    const queryUserId = (req.query.user_id || '').toString().trim();
+
+    let userToken = req.clips?.access_token;
+    let userId = req.clips?.id;
+
+    // Si se proporcionan token y user_id en la query, usarlos
+    if (queryToken && queryUserId) {
+      userToken = queryToken;
+      userId = queryUserId;
+    }
+
     if (!userToken) {
       return res.status(401).json({ error: 'auth_required', message: 'Inicia sesión para crear clips' });
     }
@@ -465,7 +477,7 @@ app.post('/api/clips/create', async (req, res) => {
       }
       broadcasterId = channelUser.id;
     } else {
-      broadcasterId = req.clips.id;
+      broadcasterId = userId;
     }
 
     const clipData = await createClip({ broadcasterId, userToken });
