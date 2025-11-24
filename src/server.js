@@ -22,11 +22,11 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-function setAuthCookie(req, res, payload) {
+function setCookie(req, res, cookieName, payload) {
   const token = jwt.sign(payload, jwtSecret, { expiresIn: '7d' });
   const forwardedProto = (req.headers['x-forwarded-proto'] || '').toString();
   const proto = forwardedProto || req.protocol || 'http';
-  res.cookie('auth', token, {
+  res.cookie(cookieName, token, {
     httpOnly: true,
     sameSite: 'lax',
     secure: proto === 'https',
@@ -34,29 +34,9 @@ function setAuthCookie(req, res, payload) {
   });
 }
 
-function setChannelCookie(req, res, payload) {
-  const token = jwt.sign(payload, jwtSecret, { expiresIn: '7d' });
-  const forwardedProto = (req.headers['x-forwarded-proto'] || '').toString();
-  const proto = forwardedProto || req.protocol || 'http';
-  res.cookie('channel_auth', token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: proto === 'https',
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  });
-}
-
-function setClipsCookie(req, res, payload) {
-  const token = jwt.sign(payload, jwtSecret, { expiresIn: '7d' });
-  const forwardedProto = (req.headers['x-forwarded-proto'] || '').toString();
-  const proto = forwardedProto || req.protocol || 'http';
-  res.cookie('clips_auth', token, {
-    httpOnly: true,
-    sameSite: 'lax',
-    secure: proto === 'https',
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  });
-}
+const setAuthCookie = (req, res, payload) => setCookie(req, res, 'auth', payload);
+const setChannelCookie = (req, res, payload) => setCookie(req, res, 'channel_auth', payload);
+const setClipsCookie = (req, res, payload) => setCookie(req, res, 'clips_auth', payload);
 
 function getRedirectUri(req) {
   const envRedirect = process.env.OAUTH_REDIRECT_URI;
