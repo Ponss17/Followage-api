@@ -1,4 +1,7 @@
+import NodeCache from 'node-cache';
 import { formatFollowageText, diffFromNow, formatByPattern } from './utils.js';
+
+const cache = new NodeCache({ stdTTL: 300 }); // 5 minutes cache
 
 let cachedToken = null;
 let cachedTokenExp = 0;
@@ -42,25 +45,48 @@ async function twitchFetch(path, params = {}, tokenOverride = null) {
   for (const [k, v] of Object.entries(params)) {
     url.searchParams.set(k, v);
   }
-  const resp = await fetch(url, {
-    headers: {
-      'Client-Id': clientId,
-      'Authorization': `Bearer ${token}`
+
+  let attempts = 0;
+  while (attempts < 3) {
+    try {
+      const resp = await fetch(url, {
+        headers: {
+          'Client-Id': clientId,
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (resp.status === 429 || resp.status >= 500) {
+        attempts++;
+        await new Promise(r => setTimeout(r, 1000 * attempts));
+        continue;
+      }
+
+      if (!resp.ok) {
+        const body = await resp.text();
+        const err = new Error(`Error de Twitch Helix: ${resp.status} ${body}`);
+        err.statusCode = resp.status;
+        throw err;
+      }
+      return await resp.json();
+    } catch (err) {
+      if (attempts >= 2) throw err;
+      attempts++;
+      await new Promise(r => setTimeout(r, 1000 * attempts));
     }
-  });
-  if (!resp.ok) {
-    const body = await resp.text();
-    const err = new Error(`Error de Twitch Helix: ${resp.status} ${body}`);
-    err.statusCode = resp.status;
-    throw err;
   }
-  return resp.json();
 }
 
 export async function getUserByLogin(login) {
+  const cached = cache.get(`user_${login}`);
+  if (cached) return cached;
+
   const data = await twitchFetch('users', { login });
   if (!data?.data?.length) return null;
-  return data.data[0];
+
+  const user = data.data[0];
+  cache.set(`user_${login}`, user);
+  return user;
 }
 
 export async function getFollowRecord(fromId, toId, userToken) {
@@ -95,8 +121,10 @@ export async function getFollowerRecordByChannelToken(broadcasterId, userId, cha
 }
 
 export async function getFollowageJsonByFollowers({ viewer, channel, channelToken }) {
-  const viewerUser = await getUserByLogin(viewer);
-  const channelUser = await getUserByLogin(channel);
+  const [viewerUser, channelUser] = await Promise.all([
+    getUserByLogin(viewer),
+    getUserByLogin(channel)
+  ]);
   if (!viewerUser) {
     const err = new Error(`No se encontró el usuario viewer "${viewer}"`);
     err.statusCode = 404;
@@ -140,8 +168,10 @@ export async function getFollowageTextByPattern({ viewer, channel, pattern = 'ym
 }
 
 export async function getFollowageJson({ viewer, channel, userToken }) {
-  const viewerUser = await getUserByLogin(viewer);
-  const channelUser = await getUserByLogin(channel);
+  const [viewerUser, channelUser] = await Promise.all([
+    getUserByLogin(viewer),
+    getUserByLogin(channel)
+  ]);
   if (!viewerUser) {
     const err = new Error(`No se encontró el usuario viewer "${viewer}"`);
     err.statusCode = 404;

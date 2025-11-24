@@ -528,6 +528,13 @@ app.get('/twitch/chatter/:streamer', async (req, res) => {
   }
 });
 
+app.use((err, req, res, next) => {
+  console.error(err);
+  const status = err.statusCode || 500;
+  const message = err.message || 'Internal Server Error';
+  res.status(status).json({ error: true, message });
+});
+
 export default app;
 
 const isServerless =
