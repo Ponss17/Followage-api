@@ -22,7 +22,6 @@ const moderatorIdEl = document.getElementById('moderatorId');
 const channelTokenEl = document.getElementById('channelToken');
 const toggleAdvancedBtn = document.getElementById('toggleAdvancedBtn');
 const advancedSection = document.getElementById('advancedSection');
-// Botones inline dentro del input
 const toggleModeratorBtn = document.getElementById('toggleModeratorId');
 const toggleChannelBtn = document.getElementById('toggleChannelToken');
 
@@ -344,7 +343,7 @@ function updateRevealButtonsLabel() {
   }
 }
 
-// Inicial: valores ocultos
+//  valores ocultos
 if (moderatorIdEl) moderatorIdEl.type = 'password';
 if (channelTokenEl) channelTokenEl.type = 'password';
 updateRevealButtonsLabel();
@@ -363,7 +362,7 @@ if (toggleChannelBtn && channelTokenEl) {
   });
 }
 
-// Selección de idioma: actualiza etiquetas del botón inline
+// Selección de idioma
 if (langEl) {
   langEl.addEventListener('change', () => {
     updateUrlLabels();

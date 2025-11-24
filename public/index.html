@@ -54,7 +54,8 @@
           <label>
             Usuario $(user)/$(touser)
             <input type="text" id="viewer" placeholder="Ingresa el usuario o se completará tras login" required />
-            <small class="hint">Si el canal/moderador está autenticado, puedes consultar cualquier usuario sin login de usuario.</small>
+            <small class="hint">Si el canal/moderador está autenticado, puedes consultar cualquier usuario sin login de
+              usuario.</small>
           </label>
           <label>
             Canal $(channel)
@@ -77,9 +78,8 @@
             </select>
           </label>
         </div>
-      
-      <!-- eliminado el botón toggleAdvancedBtn -->
-      
+
+
         <div class="grid">
           <label>
             Moderator ID (opcional)
@@ -95,10 +95,11 @@
               <input type="password" id="channelToken" placeholder="Pegue aquí el OAuth del mod" />
               <button type="button" class="reveal-btn" id="toggleChannelToken">Mostrar</button>
             </div>
-            <small class="hint">Se completa automáticamente tras iniciar sesión Canal/Moderador; opcional. Usa scope <code>moderator:read:followers</code>.</small>
+            <small class="hint">Se completa automáticamente tras iniciar sesión Canal/Moderador; opcional. Usa scope
+              <code>moderator:read:followers</code>.</small>
           </label>
         </div>
-      
+
         <button class="btn" type="submit">Generar</button>
       </form>
       <div id="result" class="result"></div>
@@ -118,7 +119,8 @@
         <li><span class="icon">✓</span> Login Canal/Moderador cachea <code>channel_id</code> y <code>token</code>;
           autocompleta Moderator ID y Token.</li>
         <li><span class="icon">✓</span> Genera y muestra URL personalizada y genérica (Nightbot) envueltas como
-          <code>$(urlfetch ...)</code>.</li>
+          <code>$(urlfetch ...)</code>.
+        </li>
         <li><span class="icon">✓</span> ES/EN: etiquetas de URL y respuestas en el idioma seleccionado.</li>
         <li><span class="icon">✓</span> Endpoint público: <code>/twitch/followage/$(channel)/$(touser)</code> con
           valores por defecto útiles.</li>
@@ -170,7 +172,7 @@
 
   <footer class="footer">
     <div class="container">
-      <p>© LosPerris.site - Followage API</p>
+      <p>© LosPerris.site - Followage API | <a href="/twitch/clips/" style="color: #a78bfa;">Clips API</a></p>
     </div>
   </footer>
 

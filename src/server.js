@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
-import { getFollowageText, getFollowageJson, getFollowageTextByPattern, getFollowageJsonByFollowers } from './twitch.js';
+import { getFollowageText, getFollowageJson, getFollowageTextByPattern, getFollowageJsonByFollowers, createClip, getUserByLogin } from './twitch.js';
 import serverlessHttp from 'serverless-http';
 
 dotenv.config();
@@ -20,6 +20,7 @@ const publicDir = path.resolve(__dirname, '..', 'public');
 
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
 
 function setAuthCookie(req, res, payload) {
   const token = jwt.sign(payload, jwtSecret, { expiresIn: '7d' });
@@ -38,6 +39,18 @@ function setChannelCookie(req, res, payload) {
   const forwardedProto = (req.headers['x-forwarded-proto'] || '').toString();
   const proto = forwardedProto || req.protocol || 'http';
   res.cookie('channel_auth', token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: proto === 'https',
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+}
+
+function setClipsCookie(req, res, payload) {
+  const token = jwt.sign(payload, jwtSecret, { expiresIn: '7d' });
+  const forwardedProto = (req.headers['x-forwarded-proto'] || '').toString();
+  const proto = forwardedProto || req.protocol || 'http';
+  res.cookie('clips_auth', token, {
     httpOnly: true,
     sameSite: 'lax',
     secure: proto === 'https',
@@ -69,6 +82,13 @@ function readAuth(req, _res, next) {
   if (channelToken) {
     try {
       req.channel = jwt.verify(channelToken, jwtSecret);
+    } catch (_) {
+    }
+  }
+  const clipsToken = req.cookies?.clips_auth;
+  if (clipsToken) {
+    try {
+      req.clips = jwt.verify(clipsToken, jwtSecret);
     } catch (_) {
     }
   }
@@ -106,6 +126,18 @@ app.get('/auth/channel/login', (req, res) => {
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req).replace('/auth/callback', '/auth/channel/callback'));
   authUrl.searchParams.set('response_type', 'code');
   authUrl.searchParams.set('scope', 'moderator:read:followers');
+  res.set('Cache-Control', 'no-store');
+  res.status(302).set('Location', authUrl.toString()).send('Redirecting to Twitch...');
+});
+
+// Login para crear clips
+app.get('/auth/clips/login', (req, res) => {
+  const clientId = process.env.TWITCH_CLIENT_ID;
+  const authUrl = new URL('https://id.twitch.tv/oauth2/authorize');
+  authUrl.searchParams.set('client_id', clientId);
+  authUrl.searchParams.set('redirect_uri', getRedirectUri(req).replace('/auth/callback', '/auth/clips/callback'));
+  authUrl.searchParams.set('response_type', 'code');
+  authUrl.searchParams.set('scope', 'clips:edit');
   res.set('Cache-Control', 'no-store');
   res.status(302).set('Location', authUrl.toString()).send('Redirecting to Twitch...');
 });
@@ -219,6 +251,57 @@ app.get('/auth/channel/callback', async (req, res) => {
   }
 });
 
+app.get('/auth/clips/callback', async (req, res) => {
+  try {
+    const code = req.query.code?.toString();
+    if (!code) return res.status(400).send('Código de autorización faltante');
+
+    const clientId = process.env.TWITCH_CLIENT_ID;
+    const clientSecret = process.env.TWITCH_CLIENT_SECRET;
+    const tokenUrl = new URL('https://id.twitch.tv/oauth2/token');
+    tokenUrl.searchParams.set('client_id', clientId);
+    tokenUrl.searchParams.set('client_secret', clientSecret);
+    tokenUrl.searchParams.set('grant_type', 'authorization_code');
+    tokenUrl.searchParams.set('redirect_uri', getRedirectUri(req).replace('/auth/callback', '/auth/clips/callback'));
+    tokenUrl.searchParams.set('code', code);
+
+    const tokenResp = await fetch(tokenUrl, { method: 'POST' });
+    if (!tokenResp.ok) {
+      const body = await tokenResp.text();
+      return res.status(502).send(`Error intercambiando token (clips): ${body}`);
+    }
+    const tokenJson = await tokenResp.json();
+    const accessToken = tokenJson.access_token;
+
+    const userResp = await fetch('https://api.twitch.tv/helix/users', {
+      headers: {
+        'Client-Id': clientId,
+        'Authorization': `Bearer ${accessToken}`
+      }
+    });
+    if (!userResp.ok) {
+      const body = await userResp.text();
+      return res.status(502).send(`Error obteniendo usuario (clips): ${body}`);
+    }
+    const userJson = await userResp.json();
+    const user = userJson?.data?.[0];
+    if (!user) return res.status(404).send('Usuario no encontrado en Twitch');
+
+    setClipsCookie(req, res, {
+      id: user.id,
+      login: user.login,
+      display_name: user.display_name,
+      access_token: accessToken,
+      token_obtained_at: Date.now(),
+      token_expires_in: tokenJson.expires_in,
+      scope: 'clips:edit'
+    });
+    res.redirect('/twitch/clips/');
+  } catch (err) {
+    res.status(500).send(err?.message || 'Error en callback de OAuth (clips)');
+  }
+});
+
 app.post('/auth/logout', (_req, res) => {
   res.clearCookie('auth');
   res.json({ ok: true });
@@ -230,8 +313,13 @@ app.post('/auth/channel/logout', (req, res) => {
     if (login) {
       channelTokens.delete(String(login).toLowerCase());
     }
-  } catch (_) {}
+  } catch (_) { }
   res.clearCookie('channel_auth');
+  res.json({ ok: true });
+});
+
+app.post('/auth/clips/logout', (_req, res) => {
+  res.clearCookie('clips_auth');
   res.json({ ok: true });
 });
 
@@ -243,6 +331,11 @@ app.get('/me', (req, res) => {
 app.get('/channel/me', (req, res) => {
   if (!req.channel) return res.status(401).json({ authenticated: false });
   res.json({ authenticated: true, channel: req.channel });
+});
+
+app.get('/clips/me', (req, res) => {
+  if (!req.clips) return res.status(401).json({ authenticated: false });
+  res.json({ authenticated: true, clips: req.clips });
 });
 
 app.get('/api/followage', async (req, res) => {
@@ -351,6 +444,38 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
   }
 });
 
+app.post('/api/clips/create', async (req, res) => {
+  try {
+    const userToken = req.clips?.access_token;
+    if (!userToken) {
+      return res.status(401).json({ error: 'auth_required', message: 'Inicia sesión para crear clips' });
+    }
+
+    const channelParam = (req.query.channel || req.body?.channel || '').toString().trim();
+    let broadcasterId;
+
+    if (channelParam) {
+      const loginRe = /^[A-Za-z0-9_]{1,32}$/;
+      if (!loginRe.test(channelParam)) {
+        return res.status(400).json({ error: 'invalid_channel', message: 'Canal inválido' });
+      }
+      const channelUser = await getUserByLogin(channelParam);
+      if (!channelUser) {
+        return res.status(404).json({ error: 'channel_not_found', message: `Canal "${channelParam}" no encontrado` });
+      }
+      broadcasterId = channelUser.id;
+    } else {
+      broadcasterId = req.clips.id;
+    }
+
+    const clipData = await createClip({ broadcasterId, userToken });
+    res.json(clipData);
+  } catch (err) {
+    const status = err?.statusCode || 500;
+    return res.status(status).json({ error: 'clip_error', message: err?.message || 'Error creando clip' });
+  }
+});
+
 app.get('/twitch/chatter/:streamer', async (req, res) => {
   const streamer = req.params.streamer?.toString().trim();
   const bots = ((req.query.bots || 'false').toString().trim().toLowerCase() === 'true');
@@ -372,7 +497,7 @@ app.get('/twitch/chatter/:streamer', async (req, res) => {
       const list = Array.isArray(cats[key]) ? cats[key] : [];
       arr = arr.concat(list);
     }
-    const knownBots = new Set(['nightbot','streamelements','moobot','wizebot','fossabot','coebot','streamlabs','deepbot','anotherttvviewer','supibot']);
+    const knownBots = new Set(['nightbot', 'streamelements', 'moobot', 'wizebot', 'fossabot', 'coebot', 'streamlabs', 'deepbot', 'anotherttvviewer', 'supibot']);
     if (!bots) {
       arr = arr.filter((u) => !knownBots.has(String(u).toLowerCase()));
     }

@@ -175,3 +175,27 @@ export async function getFollowageText({ viewer, channel, lang = 'es', userToken
   const json = await getFollowageJson({ viewer, channel, userToken });
   return formatFollowageText(json, lang);
 }
+
+export async function createClip({ broadcasterId, userToken }) {
+  if (!userToken) {
+    const err = new Error('Se requiere autenticación del usuario para crear clips');
+    err.statusCode = 401;
+    throw err;
+  }
+
+  const data = await twitchFetch('clips', { broadcaster_id: broadcasterId }, userToken);
+
+  if (!data?.data?.length) {
+    const err = new Error('No se pudo crear el clip');
+    err.statusCode = 500;
+    throw err;
+  }
+
+  const clip = data.data[0];
+  return {
+    id: clip.id,
+    edit_url: clip.edit_url,
+    // La URL del clip se construye a partir del ID
+    url: `https://clips.twitch.tv/${clip.id}`
+  };
+}

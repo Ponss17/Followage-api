@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Twitch Clips API – LosPerris</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" href="/imgs/LosPerris-gamer.webp" type="image/webp" sizes="any">
+  <meta name="theme-color" content="#1E1E2F">
+  <link rel="apple-touch-icon" href="/imgs/LosPerris-gamer.webp">
+</head>
+
+<body>
+  <header class="hero">
+    <div class="hero-bg"></div>
+    <div class="container">
+      <img class="site-logo tilt" src="/imgs/LosPerris-gamer.webp" alt="LosPerris">
+      <div class="hero-badge">LosPerris - Ponsscito</div>
+      <h1 class="gradient-text">Twitch Clips API</h1>
+      <p>Crea clips de Twitch programáticamente desde tus comandos de chat.</p>
+      <div class="cta">
+        <a class="btn" href="#demo">Probar ahora</a>
+        <a class="btn btn-secondary" href="/">Followage API</a>
+      </div>
+      <div class="auth-box" id="clipsAuthBox">
+        <span id="clipsAuthStatus">No autenticado</span>
+        <button class="btn" id="clipsLoginBtn">Iniciar sesión para Clips</button>
+        <button class="btn btn-secondary" id="clipsLogoutBtn" style="display:none">Cerrar sesión</button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="demo" class="card">
+      <h2>Crear Clip</h2>
+      <p id="clipsNotice" class="notice" style="display:none">
+        Inicia sesión con Twitch para crear clips. Puedes usar tu cuenta principal o una cuenta de bot.
+      </p>
+      <form id="clips-form">
+        <div class="grid">
+          <label>
+            Canal (opcional)
+            <input type="text" id="clipChannel" placeholder="Deja vacío para usar tu canal" />
+            <small class="hint">Si está vacío, se creará un clip de tu propio canal.</small>
+          </label>
+        </div>
+        <button class="btn" type="submit">Crear Clip</button>
+      </form>
+      <div id="clipResult" class="result"></div>
+      <div id="clip-url-block" class="result" style="display:none">
+        <small>URL del clip:</small>
+        <div><code id="clipUrl"></code></div>
+        <small style="margin-top: 1rem; display: block;">URL de edición:</small>
+        <div><code id="clipEditUrl"></code></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Características</h2>
+      <ul>
+        <li><span class="icon">✓</span> Crea clips programáticamente con autenticación OAuth</li>
+        <li><span class="icon">✓</span> Especifica el canal o usa tu propio canal por defecto</li>
+        <li><span class="icon">✓</span> Recibe la URL del clip y la URL de edición</li>
+        <li><span class="icon">✓</span> Perfecto para comandos de chat en Nightbot/StreamElements</li>
+        <li><span class="icon">✓</span> Rate limiting: 3 clips cada 5 minutos</li>
+      </ul>
+    </section>
+
+    <section id="docs" class="card">
+      <h2>Documentación</h2>
+      <h3>Endpoint API</h3>
+      <p>Para crear clips desde comandos de chat, usa el siguiente endpoint:</p>
+      <pre><code>POST /api/clips/create?channel={canal}</code></pre>
+      <p><strong>Parámetros:</strong></p>
+      <ul>
+        <li><code>channel</code> (opcional): Nombre del canal donde crear el clip</li>
+      </ul>
+
+      <hr />
+      <h3>Ejemplo para Nightbot</h3>
+      <p>Nota: Nightbot no soporta POST requests directamente. Para usar esta funcionalidad en Nightbot, necesitarás un
+        servicio intermedio o usar la interfaz web.</p>
+
+      <hr />
+      <h3>Rate Limiting</h3>
+      <p class="notice">
+        Para mantener un servicio justo, este endpoint está limitado a 3 clips exitosos por período de 5 minutos.
+        Las solicitudes que excedan este límite recibirán un error.
+      </p>
+    </section>
+
+    <section class="card muted">
+      <h2>Notas</h2>
+      <ul>
+        <li>Requiere autenticación con scope <code>clips:edit</code></li>
+        <li>Los clips tardan unos segundos en procesarse</li>
+        <li>Se recomienda un cooldown de 5-10 segundos en comandos de chat</li>
+        <li>Puedes iniciar sesión con una cuenta de bot para que los clips aparezcan bajo ese nombre</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>© LosPerris.site - Twitch Clips API</p>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+
+</html>
