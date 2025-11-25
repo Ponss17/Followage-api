@@ -212,16 +212,29 @@ export async function createClip({ broadcasterId, userToken }) {
     err.statusCode = 401;
     throw err;
   }
-
-  const data = await twitchFetch('clips', { broadcaster_id: broadcasterId }, userToken);
-
-  if (!data?.data?.length) {
+  const clientId = process.env.TWITCH_CLIENT_ID;
+  const url = new URL('https://api.twitch.tv/helix/clips');
+  url.searchParams.set('broadcaster_id', broadcasterId);
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Client-Id': clientId,
+      'Authorization': `Bearer ${userToken}`
+    }
+  });
+  if (!resp.ok) {
+    const body = await resp.text();
+    const err = new Error(`Error creando clip: ${resp.status} ${body}`);
+    err.statusCode = resp.status;
+    throw err;
+  }
+  const data = await resp.json();
+  const clip = data?.data?.[0];
+  if (!clip) {
     const err = new Error('No se pudo crear el clip');
     err.statusCode = 500;
     throw err;
   }
-
-  const clip = data.data[0];
   return {
     id: clip.id,
     edit_url: clip.edit_url,

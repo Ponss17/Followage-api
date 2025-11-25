@@ -65,6 +65,9 @@ async function checkClipsAuth() {
                 if (streamlabsCommand) {
                     streamlabsCommand.textContent = slCommand;
                 }
+
+                setupCopy('copyNightbotBtn','nightbotCommand');
+                setupCopy('copyStreamlabsBtn','streamlabsCommand');
             }
 
             return true;
@@ -106,6 +109,23 @@ function setupToggle(btnId, inputId) {
 setupToggle('toggleUserId', 'userId');
 setupToggle('toggleAccessToken', 'accessToken');
 setupToggle('toggleAuthCode', 'authCode');
+
+function setupCopy(btnId, codeId) {
+    const btn = document.getElementById(btnId);
+    const codeEl = document.getElementById(codeId);
+    if (btn && codeEl) {
+        btn.addEventListener('click', async () => {
+            const text = codeEl.textContent || '';
+            if (!text) return;
+            try {
+                await navigator.clipboard.writeText(text);
+                const prev = btn.textContent;
+                btn.textContent = '¡Copiado!';
+                setTimeout(() => { btn.textContent = prev; }, 1500);
+            } catch (_) {}
+        });
+    }
+}
 
 const copyAuthBtn = document.getElementById('toggleAuthCode');
 if (copyAuthBtn) {
