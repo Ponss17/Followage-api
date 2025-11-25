@@ -15,23 +15,23 @@ Verifica cuánto tiempo lleva un usuario siguiendo tu canal.
 Agrega este comando en tu Nightbot:
 
 ```
-!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es)
+!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es&moderatorId=(tu_id)&token=(tu_token))
 ```
 
 **Para consultar a otro usuario:**
 ```
-!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=ymdhis&lang=es)
+!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=ymdhis&lang=es&moderatorId=(tu_id)&token=(tu_token))
 ```
 
 **En inglés:**
 ```
-!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=en)
+!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=en&moderatorId=(tu_id)&token=(tu_token))
 ```
 
-### Cómo usarlo en StreamElements
+### Cómo usarlo in StreamElements
 
 ```
-!command add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/${user}?format=ymdhis&lang=es)
+!command add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/${user}?format=ymdhis&lang=es&moderatorId=(tu_id)&token=(tu_token))
 ```
 
 ### Ejemplos Nightbot (listos para copiar)
