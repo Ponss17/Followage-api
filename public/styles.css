@@ -333,6 +333,11 @@ select:focus-visible {
   padding-right: 88px;
 }
 
+.input-row code {
+  padding-right: 88px;
+  display: block;
+}
+
 .reveal-btn {
   position: absolute;
   right: 8px;

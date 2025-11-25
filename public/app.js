@@ -25,6 +25,8 @@ const advancedSection = document.getElementById('advancedSection');
 const toggleModeratorBtn = document.getElementById('toggleModeratorId');
 const toggleChannelBtn = document.getElementById('toggleChannelToken');
 const authCodeEl = document.getElementById('authCode');
+const copyUrlExampleBtn = document.getElementById('copyUrlExampleBtn');
+const copyUrlGenericBtn = document.getElementById('copyUrlGenericBtn');
 
 function updateAdvancedToggleLabel() {
   const lang = (langEl?.value || 'es');
@@ -177,15 +179,17 @@ async function refreshChannelAuth() {
           const ch = data.channel || {};
           const chId = ch.channel_id != null ? String(ch.channel_id) : '';
           const chToken = ch.access_token || '';
-          if (moderatorIdEl && !moderatorIdEl.value && chId) {
+          if (moderatorIdEl && chId) {
             moderatorIdEl.value = chId;
+            moderatorIdEl.type = 'text';
           }
-          if (channelTokenEl && !channelTokenEl.value && chToken) {
+          if (channelTokenEl && chToken) {
             channelTokenEl.value = chToken;
           }
           if (authCodeEl && data.auth_code) {
             authCodeEl.value = data.auth_code;
           }
+          updateRevealButtonsLabel();
         } catch (_) { }
       } else {
         isChannelAuthenticated = false;
@@ -226,6 +230,29 @@ if (langEl) {
 }
 updateUrlLabels();
 updateAdvancedToggleLabel();
+
+async function copyToClipboard(text, btn) {
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    if (btn) {
+      const prev = btn.textContent;
+      btn.textContent = (currentLang() === 'en') ? 'Copied' : 'Copiado';
+      setTimeout(() => { btn.textContent = prev; }, 1500);
+    }
+  } catch (_) { }
+}
+
+if (copyUrlExampleBtn && urlExampleEl) {
+  copyUrlExampleBtn.addEventListener('click', () => {
+    copyToClipboard(urlExampleEl.textContent, copyUrlExampleBtn);
+  });
+}
+if (copyUrlGenericBtn && urlGenericExampleEl) {
+  copyUrlGenericBtn.addEventListener('click', () => {
+    copyToClipboard(urlGenericExampleEl.textContent, copyUrlGenericBtn);
+  });
+}
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
