@@ -43,10 +43,19 @@ export function formatByPattern(duration, pattern = 'ymdhis', lang = 'en') {
     if (!t) continue;
     const v = t.value;
     if (typeof v !== 'number') continue;
-    if (v || parts.length === 0) {
+    if (v > 0) {
       parts.push(`${v} ${pluralize(v, t.singular, t.plural)}`);
     }
   }
+
+  if (parts.length === 0) {
+    const lastChar = pattern[pattern.length - 1];
+    const lastToken = tokens[lastChar];
+    if (lastToken) {
+      parts.push(`0 ${pluralize(0, lastToken.singular, lastToken.plural)}`);
+    }
+  }
+
   return parts.join(', ');
 }
 
