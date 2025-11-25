@@ -374,6 +374,15 @@ if (regenAuthCodeBtn && authCodeEl) {
         const prev = regenAuthCodeBtn.textContent;
         regenAuthCodeBtn.textContent = (currentLang() === 'en') ? 'Regenerated' : '¡Regenerado!';
         setTimeout(() => { regenAuthCodeBtn.textContent = prev; }, 1500);
+        const viewer = (viewerEl?.value || '').toString().trim();
+        const channel = (channelEl?.value || '').toString().trim();
+        const lang = currentLang();
+        const format = (formatEl?.value || 'ymdhis').toString();
+        const moderatorId = (moderatorIdEl?.value || '').toString().trim();
+        const channelToken = (channelTokenEl?.value || '').toString().trim();
+        const urls = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, code);
+        if (urlExampleEl) urlExampleEl.textContent = `$(urlfetch ${urls.displayUrl})`;
+        if (urlGenericExampleEl) urlGenericExampleEl.textContent = `$(urlfetch ${urls.genericUrl})`;
       } else {
         throw new Error('no_code');
       }

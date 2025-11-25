@@ -328,9 +328,21 @@ select:focus-visible {
 .input-row {
   position: relative;
 }
+.input-actions {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 8px;
+}
+.input-actions .reveal-btn {
+  position: static;
+  transform: none;
+}
 
 .input-row input {
-  padding-right: 88px;
+  padding-right: 220px;
 }
 
 .input-row code {
