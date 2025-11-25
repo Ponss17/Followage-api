@@ -24,6 +24,7 @@ const toggleAdvancedBtn = document.getElementById('toggleAdvancedBtn');
 const advancedSection = document.getElementById('advancedSection');
 const toggleModeratorBtn = document.getElementById('toggleModeratorId');
 const toggleChannelBtn = document.getElementById('toggleChannelToken');
+const toggleAuthBtn = document.getElementById('toggleAuthCode');
 const authCodeEl = document.getElementById('authCode');
 const copyUrlExampleBtn = document.getElementById('copyUrlExampleBtn');
 const copyUrlGenericBtn = document.getElementById('copyUrlGenericBtn');
@@ -382,11 +383,15 @@ function updateRevealButtonsLabel() {
   if (toggleChannelBtn && channelTokenEl) {
     toggleChannelBtn.textContent = labelForState(channelTokenEl.type === 'password');
   }
+  if (toggleAuthBtn && authCodeEl) {
+    toggleAuthBtn.textContent = labelForState(authCodeEl.type === 'password');
+  }
 }
 
 //  valores ocultos
 if (moderatorIdEl) moderatorIdEl.type = 'password';
 if (channelTokenEl) channelTokenEl.type = 'password';
+if (authCodeEl) authCodeEl.type = 'password';
 updateRevealButtonsLabel();
 
 // mostrar/ocultar
@@ -399,6 +404,12 @@ if (toggleModeratorBtn && moderatorIdEl) {
 if (toggleChannelBtn && channelTokenEl) {
   toggleChannelBtn.addEventListener('click', () => {
     channelTokenEl.type = (channelTokenEl.type === 'password') ? 'text' : 'password';
+    updateRevealButtonsLabel();
+  });
+}
+if (toggleAuthBtn && authCodeEl) {
+  toggleAuthBtn.addEventListener('click', () => {
+    authCodeEl.type = (authCodeEl.type === 'password') ? 'text' : 'password';
     updateRevealButtonsLabel();
   });
 }
