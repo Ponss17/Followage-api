@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Manejo de errores – Followage</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <link rel="icon" href="/imgs/LosPerris-gamer.webp" type="image/webp" sizes="any">
+</head>
+<body>
+  <header class="hero">
+    <div class="hero-bg"></div>
+    <div class="container">
+      <img class="site-logo tilt" src="/imgs/LosPerris-gamer.webp" alt="LosPerris">
+      <div class="hero-badge">LosPerris - Ponsscito</div>
+      <h1 class="gradient-text">Manejo de errores</h1>
+      <p>Detalle del error y estado del servicio.</p>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card">
+      <h2>Detalle del error</h2>
+      <div class="grid">
+        <div>
+          <label>Código</label>
+          <div class="result"><code id="errStatus"></code></div>
+        </div>
+        <div>
+          <label>Endpoint</label>
+          <div class="result"><code id="errEndpoint"></code></div>
+        </div>
+      </div>
+      <label>Mensaje</label>
+      <div class="result"><code id="errMessage"></code></div>
+
+      <label>JSON del error</label>
+      <div class="result input-row">
+        <pre id="errJson" class="result" style="margin:0"></pre>
+        <button type="button" class="reveal-btn" id="copyErrBtn">Copiar</button>
+      </div>
+
+      <div style="margin-top:10px">
+        <a class="btn" href="/">Volver</a>
+        <a class="btn btn-secondary" id="retryLink" href="#">Reintentar</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Estado del servicio</h2>
+      <div class="result input-row">
+        <pre id="healthJson" class="result" style="margin:0"></pre>
+        <button type="button" class="reveal-btn" id="copyHealthBtn">Copiar</button>
+      </div>
+      <div style="margin-top:10px">
+        <a class="btn" href="/health" target="_blank">Abrir /health</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="container">
+      <p>© LosPerris.site - Followage API</p>
+    </div>
+  </footer>
+
+  <script>
+    const p = new URLSearchParams(location.search);
+    const status = p.get('status') || '';
+    const endpoint = p.get('endpoint') || '';
+    const message = p.get('message') || '';
+    const errObj = { status, endpoint, message, timestamp: new Date().toISOString() };
+
+    const errStatusEl = document.getElementById('errStatus');
+    const errEndpointEl = document.getElementById('errEndpoint');
+    const errMessageEl = document.getElementById('errMessage');
+    const errJsonEl = document.getElementById('errJson');
+    const retryLink = document.getElementById('retryLink');
+    const copyErrBtn = document.getElementById('copyErrBtn');
+    const healthJsonEl = document.getElementById('healthJson');
+    const copyHealthBtn = document.getElementById('copyHealthBtn');
+
+    errStatusEl.textContent = status;
+    errEndpointEl.textContent = endpoint;
+    errMessageEl.textContent = message;
+    errJsonEl.textContent = JSON.stringify(errObj, null, 2);
+
+    retryLink.href = endpoint || '/';
+
+    async function copy(text, btn) {
+      try {
+        await navigator.clipboard.writeText(text);
+        const prev = btn.textContent;
+        btn.textContent = 'Copiado';
+        setTimeout(() => btn.textContent = prev, 1500);
+      } catch (_) {}
+    }
+
+    if (copyErrBtn) {
+      copyErrBtn.addEventListener('click', () => copy(errJsonEl.textContent, copyErrBtn));
+    }
+    if (copyHealthBtn) {
+      copyHealthBtn.addEventListener('click', () => copy(healthJsonEl.textContent, copyHealthBtn));
+    }
+
+    (async () => {
+      try {
+        const r = await fetch('/health');
+        const h = await r.json();
+        healthJsonEl.textContent = JSON.stringify(h, null, 2);
+      } catch (_) {
+        healthJsonEl.textContent = JSON.stringify({ error: true }, null, 2);
+      }
+    })();
+  </script>
+</body>
+</html>

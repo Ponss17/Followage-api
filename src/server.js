@@ -6,7 +6,6 @@ import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { getFollowageText, getFollowageJson, getFollowageTextByPattern, getFollowageJsonByFollowers, createClip, getUserByLogin } from './twitch.js';
-import serverlessHttp from 'serverless-http';
 
 dotenv.config();
 
@@ -76,6 +75,49 @@ function extractAuthCredentials(req) {
   }
 
   return { userId, token, refreshToken };
+}
+
+function resolveChannelToken(req, streamer) {
+  const { userId: modId, token: tokenParam, refreshToken: authRefresh } = extractAuthCredentials(req);
+  const streamerLower = String(streamer || '').toLowerCase();
+  let channelToken = null;
+  let sourceRefreshToken = null;
+  let usedCookieToken = false;
+  if (tokenParam) {
+    channelToken = tokenParam;
+    sourceRefreshToken = authRefresh || null;
+  }
+  if (!channelToken && modId && req.channel?.access_token && String(req.channel.channel_id) === modId) {
+    channelToken = req.channel.access_token;
+    sourceRefreshToken = req.channel.refresh_token || sourceRefreshToken;
+    usedCookieToken = true;
+  }
+  if (!channelToken && modId) {
+    for (const item of channelTokens.values()) {
+      if (String(item.channel_id) === modId) {
+        channelToken = item.access_token;
+        break;
+      }
+    }
+  }
+  if (!channelToken && req.channel?.access_token) {
+    channelToken = req.channel.access_token;
+    sourceRefreshToken = req.channel.refresh_token || sourceRefreshToken;
+    usedCookieToken = true;
+  }
+  if (!channelToken && channelTokens.has(streamerLower)) {
+    const item = channelTokens.get(streamerLower);
+    channelToken = item?.access_token || null;
+  }
+  if (!channelToken) {
+    const any = channelTokens.values().next().value;
+    if (any?.access_token) channelToken = any.access_token;
+  }
+  if (!channelToken && process.env.TWITCH_CHANNEL_TOKEN) {
+    channelToken = process.env.TWITCH_CHANNEL_TOKEN;
+  }
+  const authPresent = !!(req.query.auth || req.query.auth_code || req.query.code);
+  return { channelToken, sourceRefreshToken, usedCookieToken, modId, authPresent };
 }
 
 async function handleOAuthCallback(req, res, options) {
@@ -229,6 +271,26 @@ async function autoRefreshTokens(req, res, next) {
 
 app.use(autoRefreshTokens);
 
+function respondError(req, res, opts) {
+  const ui = ((req.query.ui || '').toString().trim().toLowerCase() === 'true');
+  const format = (opts?.format || 'text');
+  const lang = (opts?.lang || 'es');
+  const status = opts?.status ?? 500;
+  const code = (opts?.code || 'error');
+  const message = (opts?.message || 'error');
+  if (ui) {
+    const p = new URLSearchParams();
+    p.set('status', String(status));
+    p.set('endpoint', req.originalUrl);
+    p.set('message', message);
+    return res.redirect(`/error?${p.toString()}`);
+  }
+  if (format !== 'json') {
+    return res.type('text/plain').status(200).send(message);
+  }
+  return res.status(status).json({ error: code, message });
+}
+
 app.get('/health', (_req, res) => {
   const checks = {
     status: 'ok',
@@ -253,6 +315,9 @@ app.get('/health', (_req, res) => {
 app.use(express.static(publicDir));
 app.get('/', (_req, res) => {
   res.sendFile(path.join(publicDir, 'index.html'));
+});
+app.get('/error', (_req, res) => {
+  res.sendFile(path.join(publicDir, 'error.html'));
 });
 
 // --- OAuth ---
@@ -445,7 +510,7 @@ app.get('/api/followage', async (req, res) => {
     }
   } catch (err) {
     const status = err?.statusCode || 500;
-    return res.status(status).json({ error: 'followage_error', message: err?.message || 'Error inesperado' });
+    return respondError(req, res, { format, lang, status, code: 'followage_error', message: err?.message || 'Error inesperado' });
   }
 });
 
@@ -456,53 +521,24 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
   const ping = ((req.query.ping || 'false').toString().trim().toLowerCase() === 'true');
   const lang = (req.query.lang || 'en').toString().trim();
 
-  const { userId: modId, token: tokenParam, refreshToken: authRefresh } = extractAuthCredentials(req);
 
   if (!TWITCH_LOGIN_REGEX.test(streamer) || !TWITCH_LOGIN_REGEX.test(viewer)) {
-    return res.status(400).send('invalid parameters');
+    const msg = lang === 'es' ? 'Parámetros inválidos: usa A–Z, 0–9 y _ en canal y usuario' : 'Invalid parameters: use A–Z, 0–9 and _ for channel and user';
+    return format === 'json'
+      ? res.status(400).json({ error: 'invalid_parameters', message: msg })
+      : res.type('text/plain').status(200).send(msg);
   }
 
-  let channelToken = null;
-  let sourceRefreshToken = null;
-  let usedCookieToken = false;
-  const streamerLower = streamer.toLowerCase();
+  const { channelToken: channelToken0, sourceRefreshToken, usedCookieToken, modId, authPresent } = resolveChannelToken(req, streamer);
+  let channelToken = channelToken0;
 
-  if (tokenParam) {
-    channelToken = tokenParam;
-    sourceRefreshToken = authRefresh || null;
-  }
-
-  if (modId && req.channel?.access_token && String(req.channel.channel_id) === modId) {
-    if (!channelToken) {
-      channelToken = req.channel.access_token;
-      sourceRefreshToken = req.channel.refresh_token || sourceRefreshToken;
-      usedCookieToken = true;
-    }
-  }
-  if (!channelToken && modId) {
-    for (const item of channelTokens.values()) {
-      if (String(item.channel_id) === modId) {
-        channelToken = item.access_token;
-        break;
-      }
-    }
-  }
-  if (!channelToken && req.channel?.access_token) {
-    channelToken = req.channel.access_token;
-  }
-  if (!channelToken && channelTokens.has(streamerLower)) {
-    const item = channelTokens.get(streamerLower);
-    channelToken = item?.access_token || null;
-  }
   if (!channelToken) {
-    const any = channelTokens.values().next().value;
-    if (any?.access_token) channelToken = any.access_token;
-  }
-  if (!channelToken && process.env.TWITCH_CHANNEL_TOKEN) {
-    channelToken = process.env.TWITCH_CHANNEL_TOKEN;
-  }
-  if (!channelToken) {
-    return res.status(401).send('channel token not configured');
+    const msg = authPresent
+      ? (lang === 'es' ? 'Código de autenticación inválido o expirado' : 'Invalid or expired auth code')
+      : (lang === 'es' ? 'Error: token del canal/mod no configurado. Inicia sesión canal/mod o usa ?auth=' : 'Error: channel/mod token not configured. Login channel/mod or use ?auth=');
+    return format === 'json'
+      ? res.status(401).json({ error: authPresent ? 'invalid_auth_code' : 'channel_token_missing', message: msg })
+      : res.type('text/plain').status(200).send(msg);
   }
 
   try {
@@ -517,6 +553,7 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
     }
   } catch (err) {
     const status = err?.statusCode || 500;
+    const ui = ((req.query.ui || '').toString().trim().toLowerCase() === 'true');
     if (status === 401 && sourceRefreshToken) {
       try {
         const r = await refreshAccessToken(sourceRefreshToken);
@@ -551,10 +588,10 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
         }
       } catch (e2) {
         const st = e2?.statusCode || 500;
-        return res.status(st).send('error');
+        return respondError(req, res, { format, lang, status: st, code: 'followage_error', message: e2?.message || 'error' });
       }
     }
-    return res.status(status).send('error');
+    return respondError(req, res, { format, lang, status, code: 'followage_error', message: err?.message || 'error' });
   }
 });
 
@@ -596,7 +633,75 @@ app.post('/api/clips/create', async (req, res) => {
     res.json(clipData);
   } catch (err) {
     const status = err?.statusCode || 500;
-    return res.status(status).json({ error: 'clip_error', message: err?.message || 'Error creando clip' });
+    const lang = (req.query.lang || 'es').toString().trim();
+    const wantText = ((req.query.format || '').toString().trim() === 'text');
+    let msg;
+    if (status === 401) {
+      msg = lang === 'es' ? 'Debes iniciar sesión para crear clips' : 'Authentication required to create clips';
+    } else if (status === 404) {
+      const chParam = (req.query.channel || '').toString().trim();
+      msg = lang === 'es' ? `Canal "${chParam}" no encontrado` : `Channel "${chParam}" not found`;
+    } else if (status === 400 || /offline|not.*live|is not live/i.test(err?.message || '')) {
+      msg = lang === 'es' ? 'No se puede en canales off' : 'Cannot create clip when channel is offline';
+    } else {
+      msg = lang === 'es' ? `Error creando clip: ${err?.message || 'error'}` : `Error creating clip: ${err?.message || 'error'}`;
+    }
+    if (wantText) {
+      return res.type('text/plain').status(200).send(msg);
+    }
+    return res.status(status).json({ error: 'clip_error', message: msg });
+  }
+});
+
+app.get('/api/clips/create', async (req, res) => {
+  try {
+    const creator = (req.query.creator || '').toString().trim();
+    const { userId: extractedId, token: extractedToken } = extractAuthCredentials(req);
+
+    let userToken = extractedToken || req.clips?.access_token;
+    let userId = extractedId || req.clips?.id;
+
+    const lang = (req.query.lang || 'es').toString().trim();
+
+    if (!userToken) {
+      const msg = lang === 'es' ? 'Debes iniciar sesión para crear clips' : 'Authentication required to create clips';
+      return res.type('text/plain').status(200).send(msg);
+    }
+
+    const channelParam = (req.query.channel || '').toString().trim();
+    let broadcasterId;
+
+    if (channelParam) {
+      if (!TWITCH_LOGIN_REGEX.test(channelParam)) {
+        const msg = lang === 'es' ? 'Canal inválido' : 'Invalid channel';
+        return res.type('text/plain').status(200).send(msg);
+      }
+      const channelUser = await getUserByLogin(channelParam);
+      if (!channelUser) {
+        const msg = lang === 'es' ? `Canal "${channelParam}" no encontrado` : `Channel "${channelParam}" not found`;
+        return res.type('text/plain').status(200).send(msg);
+      }
+      broadcasterId = channelUser.id;
+    } else {
+      broadcasterId = userId;
+    }
+
+    const clipData = await createClip({ broadcasterId, userToken });
+    const clipUrl = clipData.url || '';
+    const msgOk = creator
+      ? (lang === 'es' ? `✅ Clip creado por ${creator}: ${clipUrl}` : `✅ Clip created by ${creator}: ${clipUrl}`)
+      : (lang === 'es' ? `✅ Clip creado: ${clipUrl}` : `✅ Clip created: ${clipUrl}`);
+    return res.type('text/plain').status(200).send(msgOk);
+  } catch (err) {
+    const status = err?.statusCode || 500;
+    const lang = (req.query.lang || 'es').toString().trim();
+    const channelParam = (req.query.channel || '').toString().trim();
+    let msg;
+    if (status === 401) msg = lang === 'es' ? 'Debes iniciar sesión para crear clips' : 'Authentication required';
+    else if (status === 404) msg = lang === 'es' ? `Canal "${channelParam}" no encontrado` : `Channel "${channelParam}" not found`;
+    else if (status === 400 || /offline|not.*live|is not live/i.test(err?.message || '')) msg = lang === 'es' ? 'No se puede en canales off' : 'Cannot create clip when channel is offline';
+    else msg = lang === 'es' ? `Error creando clip: ${err?.message || 'error'}` : `Error creating clip: ${err?.message || 'error'}`;
+    return res.type('text/plain').status(200).send(msg);
   }
 });
 
