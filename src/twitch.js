@@ -97,7 +97,7 @@ export async function getFollowRecord(fromId, toId, userToken) {
   }
   let cursor = null;
   let safety = 0;
-  while (safety++ < 20) {
+  while (safety++ < 100) {
     const params = { user_id: fromId, first: '100' };
     if (cursor) params.after = cursor;
     const data = await twitchFetch('channels/followed', params, userToken);

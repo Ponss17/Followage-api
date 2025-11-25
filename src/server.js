@@ -19,6 +19,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const publicDir = path.resolve(__dirname, '..', 'public');
 
+// Constants
+const TWITCH_AUTH_URL = 'https://id.twitch.tv/oauth2/authorize';
+const TWITCH_TOKEN_URL = 'https://id.twitch.tv/oauth2/token';
+const TWITCH_USERS_URL = 'https://api.twitch.tv/helix/users';
+const TWITCH_LOGIN_REGEX = /^[A-Za-z0-9_]{1,32}$/;
+
 // Encryption helpers
 const ENCRYPTION_KEY = crypto.scryptSync(jwtSecret, 'salt', 32);
 const IV_LENGTH = 16;
@@ -39,6 +45,89 @@ function decrypt(text) {
   let decrypted = decipher.update(encryptedText);
   decrypted = Buffer.concat([decrypted, decipher.final()]);
   return decrypted.toString();
+}
+
+// Helper functions
+function getTwitchHeaders(token) {
+  return {
+    'Client-Id': process.env.TWITCH_CLIENT_ID,
+    'Authorization': `Bearer ${token}`
+  };
+}
+
+function extractAuthCredentials(req) {
+  const authCode = (req.query.auth || req.query.code || '').toString().trim();
+  const queryToken = (req.query.token || req.query.mod_token || '').toString().trim();
+  const queryId = (req.query.moderatorId || req.query.user_id || '').toString().trim();
+
+  let userId = queryId;
+  let token = queryToken;
+
+  if (authCode) {
+    try {
+      const decrypted = JSON.parse(decrypt(authCode));
+      if (decrypted.id && decrypted.token) {
+        userId = decrypted.id;
+        token = decrypted.token;
+      }
+    } catch (err) {
+      console.error('Error decrypting auth code:', err);
+    }
+  }
+
+  return { userId, token };
+}
+
+async function handleOAuthCallback(req, res, options) {
+  const { redirectUri, cookieSetter, redirectPath, extraData = {} } = options;
+
+  try {
+    const code = req.query.code?.toString();
+    if (!code) return res.status(400).send('Código de autorización faltante');
+
+    const clientId = process.env.TWITCH_CLIENT_ID;
+    const clientSecret = process.env.TWITCH_CLIENT_SECRET;
+    const tokenUrl = new URL(TWITCH_TOKEN_URL);
+    tokenUrl.searchParams.set('client_id', clientId);
+    tokenUrl.searchParams.set('client_secret', clientSecret);
+    tokenUrl.searchParams.set('grant_type', 'authorization_code');
+    tokenUrl.searchParams.set('redirect_uri', redirectUri);
+    tokenUrl.searchParams.set('code', code);
+
+    const tokenResp = await fetch(tokenUrl, { method: 'POST' });
+    if (!tokenResp.ok) {
+      const body = await tokenResp.text();
+      return res.status(502).send(`Error intercambiando token: ${body}`);
+    }
+    const tokenJson = await tokenResp.json();
+    const accessToken = tokenJson.access_token;
+
+    const userResp = await fetch(TWITCH_USERS_URL, {
+      headers: getTwitchHeaders(accessToken)
+    });
+    if (!userResp.ok) {
+      const body = await userResp.text();
+      return res.status(502).send(`Error obteniendo usuario: ${body}`);
+    }
+    const userJson = await userResp.json();
+    const user = userJson?.data?.[0];
+    if (!user) return res.status(404).send('Usuario no encontrado en Twitch');
+
+    const cookieData = {
+      id: user.id,
+      login: user.login,
+      display_name: user.display_name,
+      access_token: accessToken,
+      token_obtained_at: Date.now(),
+      token_expires_in: tokenJson.expires_in,
+      ...extraData
+    };
+
+    cookieSetter(req, res, cookieData);
+    res.redirect(redirectPath);
+  } catch (err) {
+    res.status(500).send(err?.message || 'Error en callback de OAuth');
+  }
 }
 
 app.use(cookieParser());
@@ -74,25 +163,18 @@ function getRedirectUri(req) {
 }
 
 function readAuth(req, _res, next) {
-  const token = req.cookies?.auth;
-  if (token) {
-    try {
-      req.user = jwt.verify(token, jwtSecret);
-    } catch (_) {
-    }
-  }
-  const channelToken = req.cookies?.channel_auth;
-  if (channelToken) {
-    try {
-      req.channel = jwt.verify(channelToken, jwtSecret);
-    } catch (_) {
-    }
-  }
-  const clipsToken = req.cookies?.clips_auth;
-  if (clipsToken) {
-    try {
-      req.clips = jwt.verify(clipsToken, jwtSecret);
-    } catch (_) {
+  const cookies = [
+    { name: 'auth', key: 'user' },
+    { name: 'channel_auth', key: 'channel' },
+    { name: 'clips_auth', key: 'clips' }
+  ];
+
+  for (const { name, key } of cookies) {
+    const token = req.cookies?.[name];
+    if (token) {
+      try {
+        req[key] = jwt.verify(token, jwtSecret);
+      } catch (_) { }
     }
   }
   next();
@@ -101,7 +183,24 @@ function readAuth(req, _res, next) {
 app.use(readAuth);
 
 app.get('/health', (_req, res) => {
-  res.json({ status: 'ok' });
+  const checks = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    config: {
+      hasClientId: !!process.env.TWITCH_CLIENT_ID,
+      hasClientSecret: !!process.env.TWITCH_CLIENT_SECRET,
+      hasJwtSecret: !!process.env.JWT_SECRET,
+      port: port,
+      nodeVersion: process.version
+    }
+  };
+
+  const allConfigured = checks.config.hasClientId &&
+    checks.config.hasClientSecret &&
+    checks.config.hasJwtSecret;
+
+  res.status(allConfigured ? 200 : 503).json(checks);
 });
 
 app.use(express.static(publicDir));
@@ -112,7 +211,7 @@ app.get('/', (_req, res) => {
 // --- OAuth ---
 app.get('/auth/login', (req, res) => {
   const clientId = process.env.TWITCH_CLIENT_ID;
-  const authUrl = new URL('https://id.twitch.tv/oauth2/authorize');
+  const authUrl = new URL(TWITCH_AUTH_URL);
   authUrl.searchParams.set('client_id', clientId);
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req));
   authUrl.searchParams.set('response_type', 'code');
@@ -121,10 +220,9 @@ app.get('/auth/login', (req, res) => {
   res.status(302).set('Location', authUrl.toString()).send('Redirecting to Twitch...');
 });
 
-// Login canal/moderador para followers
 app.get('/auth/channel/login', (req, res) => {
   const clientId = process.env.TWITCH_CLIENT_ID;
-  const authUrl = new URL('https://id.twitch.tv/oauth2/authorize');
+  const authUrl = new URL(TWITCH_AUTH_URL);
   authUrl.searchParams.set('client_id', clientId);
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req).replace('/auth/callback', '/auth/channel/callback'));
   authUrl.searchParams.set('response_type', 'code');
@@ -133,10 +231,9 @@ app.get('/auth/channel/login', (req, res) => {
   res.status(302).set('Location', authUrl.toString()).send('Redirecting to Twitch...');
 });
 
-// Login para crear clips
 app.get('/auth/clips/login', (req, res) => {
   const clientId = process.env.TWITCH_CLIENT_ID;
-  const authUrl = new URL('https://id.twitch.tv/oauth2/authorize');
+  const authUrl = new URL(TWITCH_AUTH_URL);
   authUrl.searchParams.set('client_id', clientId);
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req).replace('/auth/callback', '/auth/clips/callback'));
   authUrl.searchParams.set('response_type', 'code');
@@ -146,163 +243,48 @@ app.get('/auth/clips/login', (req, res) => {
 });
 
 app.get('/auth/callback', async (req, res) => {
-  try {
-    const code = req.query.code?.toString();
-    if (!code) return res.status(400).send('Código de autorización faltante');
-
-    const clientId = process.env.TWITCH_CLIENT_ID;
-    const clientSecret = process.env.TWITCH_CLIENT_SECRET;
-    const tokenUrl = new URL('https://id.twitch.tv/oauth2/token');
-    tokenUrl.searchParams.set('client_id', clientId);
-    tokenUrl.searchParams.set('client_secret', clientSecret);
-    tokenUrl.searchParams.set('grant_type', 'authorization_code');
-    tokenUrl.searchParams.set('redirect_uri', getRedirectUri(req));
-    tokenUrl.searchParams.set('code', code);
-
-    const tokenResp = await fetch(tokenUrl, { method: 'POST' });
-    if (!tokenResp.ok) {
-      const body = await tokenResp.text();
-      return res.status(502).send(`Error intercambiando token: ${body}`);
-    }
-    const tokenJson = await tokenResp.json();
-    const accessToken = tokenJson.access_token;
-
-    const userResp = await fetch('https://api.twitch.tv/helix/users', {
-      headers: {
-        'Client-Id': clientId,
-        'Authorization': `Bearer ${accessToken}`
-      }
-    });
-    if (!userResp.ok) {
-      const body = await userResp.text();
-      return res.status(502).send(`Error obteniendo usuario: ${body}`);
-    }
-    const userJson = await userResp.json();
-    const user = userJson?.data?.[0];
-    if (!user) return res.status(404).send('Usuario no encontrado en Twitch');
-
-    setAuthCookie(req, res, {
-      id: user.id,
-      login: user.login,
-      display_name: user.display_name,
-      access_token: accessToken,
-      token_obtained_at: Date.now(),
-      token_expires_in: tokenJson.expires_in
-    });
-    res.redirect('/');
-  } catch (err) {
-    res.status(500).send(err?.message || 'Error en callback de OAuth');
-  }
+  await handleOAuthCallback(req, res, {
+    redirectUri: getRedirectUri(req),
+    cookieSetter: setAuthCookie,
+    redirectPath: '/'
+  });
 });
 
 app.get('/auth/channel/callback', async (req, res) => {
-  try {
-    const code = req.query.code?.toString();
-    if (!code) return res.status(400).send('Código de autorización faltante');
+  const user = await new Promise((resolve, reject) => {
+    const originalSetter = setChannelCookie;
+    const customSetter = (req, res, payload) => {
+      originalSetter(req, res, payload);
+      resolve(payload);
+    };
 
-    const clientId = process.env.TWITCH_CLIENT_ID;
-    const clientSecret = process.env.TWITCH_CLIENT_SECRET;
-    const tokenUrl = new URL('https://id.twitch.tv/oauth2/token');
-    tokenUrl.searchParams.set('client_id', clientId);
-    tokenUrl.searchParams.set('client_secret', clientSecret);
-    tokenUrl.searchParams.set('grant_type', 'authorization_code');
-    tokenUrl.searchParams.set('redirect_uri', getRedirectUri(req).replace('/auth/callback', '/auth/channel/callback'));
-    tokenUrl.searchParams.set('code', code);
+    handleOAuthCallback(req, res, {
+      redirectUri: getRedirectUri(req).replace('/auth/callback', '/auth/channel/callback'),
+      cookieSetter: customSetter,
+      redirectPath: '/',
+      extraData: { scope: 'moderator:read:followers' }
+    }).catch(reject);
+  }).catch(() => null);
 
-    const tokenResp = await fetch(tokenUrl, { method: 'POST' });
-    if (!tokenResp.ok) {
-      const body = await tokenResp.text();
-      return res.status(502).send(`Error intercambiando token (channel): ${body}`);
-    }
-    const tokenJson = await tokenResp.json();
-    const accessToken = tokenJson.access_token;
-
-    const userResp = await fetch('https://api.twitch.tv/helix/users', {
-      headers: {
-        'Client-Id': clientId,
-        'Authorization': `Bearer ${accessToken}`
-      }
-    });
-    if (!userResp.ok) {
-      const body = await userResp.text();
-      return res.status(502).send(`Error obteniendo canal/mod: ${body}`);
-    }
-    const userJson = await userResp.json();
-    const user = userJson?.data?.[0];
-    if (!user) return res.status(404).send('Usuario no encontrado en Twitch');
-
-    setChannelCookie(req, res, {
-      channel_id: user.id,
-      channel_login: user.login,
-      display_name: user.display_name,
-      access_token: accessToken,
-      token_obtained_at: Date.now(),
-      token_expires_in: tokenJson.expires_in,
-      scope: 'moderator:read:followers'
-    });
+  if (user) {
     channelTokens.set(user.login.toLowerCase(), {
-      access_token: accessToken,
+      access_token: user.access_token,
       channel_login: user.login,
       display_name: user.display_name,
       channel_id: user.id,
-      token_obtained_at: Date.now(),
-      token_expires_in: tokenJson.expires_in
+      token_obtained_at: user.token_obtained_at,
+      token_expires_in: user.token_expires_in
     });
-    res.redirect('/');
-  } catch (err) {
-    res.status(500).send(err?.message || 'Error en callback de OAuth (channel)');
   }
 });
 
 app.get('/auth/clips/callback', async (req, res) => {
-  try {
-    const code = req.query.code?.toString();
-    if (!code) return res.status(400).send('Código de autorización faltante');
-
-    const clientId = process.env.TWITCH_CLIENT_ID;
-    const clientSecret = process.env.TWITCH_CLIENT_SECRET;
-    const tokenUrl = new URL('https://id.twitch.tv/oauth2/token');
-    tokenUrl.searchParams.set('client_id', clientId);
-    tokenUrl.searchParams.set('client_secret', clientSecret);
-    tokenUrl.searchParams.set('grant_type', 'authorization_code');
-    tokenUrl.searchParams.set('redirect_uri', getRedirectUri(req).replace('/auth/callback', '/auth/clips/callback'));
-    tokenUrl.searchParams.set('code', code);
-
-    const tokenResp = await fetch(tokenUrl, { method: 'POST' });
-    if (!tokenResp.ok) {
-      const body = await tokenResp.text();
-      return res.status(502).send(`Error intercambiando token (clips): ${body}`);
-    }
-    const tokenJson = await tokenResp.json();
-    const accessToken = tokenJson.access_token;
-
-    const userResp = await fetch('https://api.twitch.tv/helix/users', {
-      headers: {
-        'Client-Id': clientId,
-        'Authorization': `Bearer ${accessToken}`
-      }
-    });
-    if (!userResp.ok) {
-      const body = await userResp.text();
-      return res.status(502).send(`Error obteniendo usuario (clips): ${body}`);
-    }
-    const userJson = await userResp.json();
-    const user = userJson?.data?.[0];
-    if (!user) return res.status(404).send('Usuario no encontrado en Twitch');
-
-    setClipsCookie(req, res, {
-      id: user.id,
-      login: user.login,
-      display_name: user.display_name,
-      access_token: accessToken,
-      token_obtained_at: Date.now(),
-      token_expires_in: tokenJson.expires_in,
-      scope: 'clips:edit'
-    });
-    res.redirect('/twitch/clips/');
-  } catch (err) {
-    res.status(500).send(err?.message || 'Error en callback de OAuth (clips)');
-  }
+  await handleOAuthCallback(req, res, {
+    redirectUri: getRedirectUri(req).replace('/auth/callback', '/auth/clips/callback'),
+    cookieSetter: setClipsCookie,
+    redirectPath: '/twitch/clips/',
+    extraData: { scope: 'clips:edit' }
+  });
 });
 
 app.post('/auth/logout', (_req, res) => {
@@ -334,7 +316,6 @@ app.get('/me', (req, res) => {
 app.get('/channel/me', (req, res) => {
   if (!req.channel) return res.status(401).json({ authenticated: false });
 
-  // auth code
   let authCode = null;
   try {
     const payload = JSON.stringify({
@@ -356,7 +337,6 @@ app.get('/channel/me', (req, res) => {
 app.get('/clips/me', (req, res) => {
   if (!req.clips) return res.status(401).json({ authenticated: false });
 
-  // auth code clips
   let authCode = null;
   try {
     const payload = JSON.stringify({
@@ -383,17 +363,16 @@ app.get('/api/followage', async (req, res) => {
   const lang = (req.query.lang || 'es').toString().trim();
   const userToken = req.user?.access_token || null;
 
-  const loginRe = /^[A-Za-z0-9_]{1,32}$/;
   if (!viewer || !channel) {
     return res.status(400).json({
       error: 'Parámetros inválidos',
       message: 'Se requieren "touser" (viewer) y "channel" (broadcaster)'
     });
   }
-  if (!loginRe.test(viewer)) {
+  if (!TWITCH_LOGIN_REGEX.test(viewer)) {
     return res.status(400).json({ error: 'invalid_user', message: "'user' inválido. Usa A–Z, 0–9 y _." });
   }
-  if (!loginRe.test(channel)) {
+  if (!TWITCH_LOGIN_REGEX.test(channel)) {
     return res.status(400).json({ error: 'invalid_channel', message: "'channel' inválido. Usa A–Z, 0–9 y _." });
   }
 
@@ -422,25 +401,9 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
   const ping = ((req.query.ping || 'false').toString().trim().toLowerCase() === 'true');
   const lang = (req.query.lang || 'en').toString().trim();
 
-  // Auth Code 
-  const authCode = (req.query.auth || req.query.code || '').toString().trim();
-  let tokenParam = (req.query.token || req.query.mod_token || '').toString().trim();
-  let modId = (req.query.moderatorId || '').toString().trim();
+  const { userId: modId, token: tokenParam } = extractAuthCredentials(req);
 
-  if (authCode) {
-    try {
-      const decrypted = JSON.parse(decrypt(authCode));
-      if (decrypted.id && decrypted.token) {
-        modId = decrypted.id;
-        tokenParam = decrypted.token;
-      }
-    } catch (err) {
-      console.error('Error decrypting auth code:', err);
-    }
-  }
-
-  const loginRe = /^[A-Za-z0-9_]{1,32}$/;
-  if (!loginRe.test(streamer) || !loginRe.test(viewer)) {
+  if (!TWITCH_LOGIN_REGEX.test(streamer) || !TWITCH_LOGIN_REGEX.test(viewer)) {
     return res.status(400).send('invalid parameters');
   }
 
@@ -498,30 +461,11 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
 
 app.post('/api/clips/create', async (req, res) => {
   try {
-    const queryToken = (req.query.token || '').toString().trim();
-    const queryUserId = (req.query.user_id || '').toString().trim();
     const creator = (req.query.creator || '').toString().trim();
-    const authCode = (req.query.auth || req.query.code || '').toString().trim();
+    const { userId: extractedId, token: extractedToken } = extractAuthCredentials(req);
 
-    let userToken = req.clips?.access_token;
-    let userId = req.clips?.id;
-
-    if (authCode) {
-      try {
-        const decrypted = JSON.parse(decrypt(authCode));
-        if (decrypted.id && decrypted.token) {
-          userId = decrypted.id;
-          userToken = decrypted.token;
-        }
-      } catch (err) {
-        console.error('Error decrypting clips auth code:', err);
-      }
-    }
-
-    if (queryToken && queryUserId) {
-      userToken = queryToken;
-      userId = queryUserId;
-    }
+    let userToken = extractedToken || req.clips?.access_token;
+    let userId = extractedId || req.clips?.id;
 
     if (!userToken) {
       return res.status(401).json({ error: 'auth_required', message: 'Inicia sesión para crear clips' });
@@ -531,8 +475,7 @@ app.post('/api/clips/create', async (req, res) => {
     let broadcasterId;
 
     if (channelParam) {
-      const loginRe = /^[A-Za-z0-9_]{1,32}$/;
-      if (!loginRe.test(channelParam)) {
+      if (!TWITCH_LOGIN_REGEX.test(channelParam)) {
         return res.status(400).json({ error: 'invalid_channel', message: 'Canal inválido' });
       }
       const channelUser = await getUserByLogin(channelParam);
@@ -562,8 +505,8 @@ app.get('/twitch/chatter/:streamer', async (req, res) => {
   const streamer = req.params.streamer?.toString().trim();
   const bots = ((req.query.bots || 'false').toString().trim().toLowerCase() === 'true');
   const count = Math.max(1, Math.min(10, parseInt(req.query.count || '1', 10) || 1));
-  const loginRe = /^[A-Za-z0-9_]{1,32}$/;
-  if (!loginRe.test(streamer)) {
+
+  if (!TWITCH_LOGIN_REGEX.test(streamer)) {
     return res.status(400).send('invalid parameters');
   }
   try {
