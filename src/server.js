@@ -429,6 +429,7 @@ app.post('/api/clips/create', async (req, res) => {
     // Intentar obtener el token de los parámetros de query o del usuario autenticado
     const queryToken = (req.query.token || '').toString().trim();
     const queryUserId = (req.query.user_id || '').toString().trim();
+    const creator = (req.query.creator || '').toString().trim();
 
     let userToken = req.clips?.access_token;
     let userId = req.clips?.id;
@@ -461,6 +462,13 @@ app.post('/api/clips/create', async (req, res) => {
     }
 
     const clipData = await createClip({ broadcasterId, userToken });
+
+    // Si se proporcionó un creator, modificar la respuesta para incluirlo
+    if (creator) {
+      const clipUrl = clipData.url || '';
+      return res.send(`✅ Clip creado por ${creator}: ${clipUrl}`);
+    }
+
     res.json(clipData);
   } catch (err) {
     const status = err?.statusCode || 500;
