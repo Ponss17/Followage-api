@@ -300,7 +300,7 @@ app.get('/auth/login', (req, res) => {
   authUrl.searchParams.set('client_id', clientId);
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req));
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'user:read:email user:read:follows offline_access');
+  authUrl.searchParams.set('scope', 'user:read:email user:read:follows');
   res.set('Cache-Control', 'no-store');
   res.status(302).set('Location', authUrl.toString()).send('Redirecting to Twitch...');
 });
@@ -311,7 +311,7 @@ app.get('/auth/channel/login', (req, res) => {
   authUrl.searchParams.set('client_id', clientId);
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req).replace('/auth/callback', '/auth/channel/callback'));
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'moderator:read:followers offline_access');
+  authUrl.searchParams.set('scope', 'moderator:read:followers');
   res.set('Cache-Control', 'no-store');
   res.status(302).set('Location', authUrl.toString()).send('Redirecting to Twitch...');
 });
@@ -322,7 +322,7 @@ app.get('/auth/clips/login', (req, res) => {
   authUrl.searchParams.set('client_id', clientId);
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req).replace('/auth/callback', '/auth/clips/callback'));
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'clips:edit offline_access');
+  authUrl.searchParams.set('scope', 'clips:edit');
   res.set('Cache-Control', 'no-store');
   res.status(302).set('Location', authUrl.toString()).send('Redirecting to Twitch...');
 });
