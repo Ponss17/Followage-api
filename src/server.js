@@ -19,13 +19,12 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const publicDir = path.resolve(__dirname, '..', 'public');
 
-// Constants
 const TWITCH_AUTH_URL = 'https://id.twitch.tv/oauth2/authorize';
 const TWITCH_TOKEN_URL = 'https://id.twitch.tv/oauth2/token';
 const TWITCH_USERS_URL = 'https://api.twitch.tv/helix/users';
 const TWITCH_LOGIN_REGEX = /^[A-Za-z0-9_]{1,32}$/;
 
-// Encryption helpers
+
 const ENCRYPTION_KEY = crypto.scryptSync(jwtSecret, 'salt', 32);
 const IV_LENGTH = 16;
 
@@ -47,7 +46,7 @@ function decrypt(text) {
   return decrypted.toString();
 }
 
-// Helper functions
+// Helper 
 function getTwitchHeaders(token) {
   return {
     'Client-Id': process.env.TWITCH_CLIENT_ID,
