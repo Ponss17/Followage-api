@@ -34,6 +34,16 @@ Add this command to your Nightbot:
 !command add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/${user}?format=ymdhis&lang=en)
 ```
 
+### Nightbot Examples (ready to copy)
+
+```
+$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&ping=false&lang=en&moderatorId=(your_id)&token=(your_token))
+```
+
+```
+$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=json&lang=es&ping=true&moderatorId=(your_id)&token=(your_token))
+```
+
 ---
 
 ## 🎬 Clips - Create Clips from Chat
