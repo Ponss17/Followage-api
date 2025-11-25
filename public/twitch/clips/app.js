@@ -89,26 +89,6 @@ async function checkClipsAuth() {
     return false;
 }
 
-function setupToggle(btnId, inputId) {
-    const btn = document.getElementById(btnId);
-    const input = document.getElementById(inputId);
-    if (btn && input) {
-        btn.addEventListener('click', () => {
-            if (input.type === 'password') {
-                input.type = 'text';
-                btn.textContent = 'Ocultar';
-            } else {
-                input.type = 'password';
-                btn.textContent = 'Mostrar';
-            }
-        });
-    }
-}
-
-// toggles
-setupToggle('toggleUserId', 'userId');
-setupToggle('toggleAccessToken', 'accessToken');
-setupToggle('toggleAuthCode', 'authCode');
 
 function setupCopy(btnId, codeId) {
     const btn = document.getElementById(btnId);
@@ -127,22 +107,6 @@ function setupCopy(btnId, codeId) {
     }
 }
 
-const copyAuthBtn = document.getElementById('toggleAuthCode');
-if (copyAuthBtn) {
-    copyAuthBtn.addEventListener('click', () => {
-        const input = document.getElementById('authCode');
-        if (input && input.value) {
-            input.select();
-            navigator.clipboard.writeText(input.value).then(() => {
-                const originalText = copyAuthBtn.textContent;
-                copyAuthBtn.textContent = '¡Copiado!';
-                setTimeout(() => {
-                    copyAuthBtn.textContent = originalText;
-                }, 2000);
-            });
-        }
-    });
-}
 
 // Login boton
 document.getElementById('clipsLoginBtn').addEventListener('click', () => {

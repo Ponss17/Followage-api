@@ -6,12 +6,11 @@ import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { getFollowageText, getFollowageJson, getFollowageTextByPattern, getFollowageJsonByFollowers, createClip, getUserByLogin } from './twitch.js';
-import serverlessHttp from 'serverless-http';
+import { getTokensCollection } from './db.js';
 
 dotenv.config();
 
 const app = express();
-const channelTokens = new Map();
 const port = process.env.PORT || 3000;
 const jwtSecret = process.env.JWT_SECRET || 'dev_jwt_secret';
 app.set('trust proxy', 1);
@@ -23,6 +22,38 @@ const TWITCH_AUTH_URL = 'https://id.twitch.tv/oauth2/authorize';
 const TWITCH_TOKEN_URL = 'https://id.twitch.tv/oauth2/token';
 const TWITCH_USERS_URL = 'https://api.twitch.tv/helix/users';
 const TWITCH_LOGIN_REGEX = /^[A-Za-z0-9_]{1,32}$/;
+
+async function upsertTokenRecord({ user_id, login, type, access_token, refresh_token, scope, token_obtained_at, token_expires_in }) {
+  const col = await getTokensCollection();
+  const now = Date.now();
+  const res = await col.findOneAndUpdate(
+    { user_id: String(user_id), type: String(type) },
+    {
+      $set: {
+        login: String(login || ''),
+        access_token: String(access_token || ''),
+        refresh_token: refresh_token ? String(refresh_token) : null,
+        scope: String(scope || ''),
+        token_obtained_at: token_obtained_at || now,
+        token_expires_in: token_expires_in || 0,
+        updated_at: now
+      },
+      $setOnInsert: { created_at: now }
+    },
+    { upsert: true, returnDocument: 'after' }
+  );
+  return res.value;
+}
+
+async function findTokenByUserType(user_id, type) {
+  const col = await getTokensCollection();
+  return await col.findOne({ user_id: String(user_id), type: String(type) });
+}
+
+async function findTokenByLoginType(login, type) {
+  const col = await getTokensCollection();
+  return await col.findOne({ login: String(login), type: String(type) });
+}
 
 
 const ENCRYPTION_KEY = crypto.scryptSync(jwtSecret, 'salt', 32);
@@ -54,28 +85,37 @@ function getTwitchHeaders(token) {
   };
 }
 
-function extractAuthCredentials(req) {
-  const authCode = (req.query.auth || req.query.code || '').toString().trim();
+async function extractAuthCredentials(req) {
+  const rawAuth = (req.query.auth || req.query.auth_code || req.query.code || '').toString().trim();
   const queryToken = (req.query.token || req.query.mod_token || '').toString().trim();
   const queryId = (req.query.moderatorId || req.query.user_id || '').toString().trim();
 
   let userId = queryId;
   let token = queryToken;
+  let refreshToken = null;
 
-  if (authCode) {
+  if (rawAuth) {
+    const s = decodeURIComponent(rawAuth);
     try {
-      const decrypted = JSON.parse(decrypt(authCode));
-      if (decrypted.id && decrypted.token) {
-        userId = decrypted.id;
-        token = decrypted.token;
+      const payload = JSON.parse(decrypt(s));
+      if (payload && payload.user_id && payload.type) {
+        const rec = await findTokenByUserType(payload.user_id, payload.type);
+        if (rec) {
+          userId = String(rec.user_id);
+          token = rec.access_token || token;
+          refreshToken = rec.refresh_token || null;
+        }
+      } else if (payload && payload.id && payload.token) {
+        userId = payload.id;
+        token = payload.token;
+        refreshToken = payload.refresh_token || null;
       }
-    } catch (err) {
-      console.error('Error decrypting auth code:', err);
-    }
+    } catch (_) { }
   }
 
-  return { userId, token };
+  return { userId, token, refreshToken };
 }
+
 
 async function handleOAuthCallback(req, res, options) {
   const { redirectUri, cookieSetter, redirectPath, extraData = {} } = options;
@@ -117,6 +157,7 @@ async function handleOAuthCallback(req, res, options) {
       login: user.login,
       display_name: user.display_name,
       access_token: accessToken,
+      refresh_token: tokenJson.refresh_token,
       token_obtained_at: Date.now(),
       token_expires_in: tokenJson.expires_in,
       ...extraData
@@ -153,12 +194,31 @@ function getRedirectUri(req) {
   const envRedirect = process.env.OAUTH_REDIRECT_URI;
   if (envRedirect && envRedirect.trim()) return envRedirect.trim();
 
-  const forwardedProto = (req.headers['x-forwarded-proto'] || '').toString();
-  const forwardedHost = (req.headers['x-forwarded-host'] || '').toString();
+  const forwardedProto = (req.headers['x-forwarded-proto'] || '').toString().split(',')[0];
+  const forwardedHost = (req.headers['x-forwarded-host'] || '').toString().split(',')[0];
   const host = forwardedHost || req.headers['host'];
   const proto = forwardedProto || req.protocol || 'http';
   if (host) return `${proto}://${host}/auth/callback`;
   return `http://localhost:${port}/auth/callback`;
+}
+
+async function refreshAccessToken(refreshToken) {
+  const clientId = process.env.TWITCH_CLIENT_ID;
+  const clientSecret = process.env.TWITCH_CLIENT_SECRET;
+  const url = new URL(TWITCH_TOKEN_URL);
+  url.searchParams.set('client_id', clientId);
+  url.searchParams.set('client_secret', clientSecret);
+  url.searchParams.set('grant_type', 'refresh_token');
+  url.searchParams.set('refresh_token', refreshToken);
+  const resp = await fetch(url, { method: 'POST' });
+  if (!resp.ok) {
+    const body = await resp.text();
+    const err = new Error(`Error refrescando token: ${resp.status} ${body}`);
+    err.statusCode = resp.status;
+    throw err;
+  }
+  const json = await resp.json();
+  return { access_token: json.access_token, expires_in: json.expires_in, refresh_token: json.refresh_token || refreshToken };
 }
 
 
@@ -212,6 +272,7 @@ app.get('/health', (_req, res) => {
       hasClientId: !!process.env.TWITCH_CLIENT_ID,
       hasClientSecret: !!process.env.TWITCH_CLIENT_SECRET,
       hasJwtSecret: !!process.env.JWT_SECRET,
+      hasMongoUri: !!(process.env.MONGODB_URI || process.env.Losperrisapi_MONGODB_URI || process.env.NONOGDB_URI),
       port: port,
       nodeVersion: process.version
     }
@@ -239,7 +300,7 @@ app.get('/auth/login', (req, res) => {
   authUrl.searchParams.set('client_id', clientId);
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req));
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'user:read:email user:read:follows');
+  authUrl.searchParams.set('scope', 'user:read:email user:read:follows offline_access');
   res.set('Cache-Control', 'no-store');
   res.status(302).set('Location', authUrl.toString()).send('Redirecting to Twitch...');
 });
@@ -250,7 +311,7 @@ app.get('/auth/channel/login', (req, res) => {
   authUrl.searchParams.set('client_id', clientId);
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req).replace('/auth/callback', '/auth/channel/callback'));
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'moderator:read:followers');
+  authUrl.searchParams.set('scope', 'moderator:read:followers offline_access');
   res.set('Cache-Control', 'no-store');
   res.status(302).set('Location', authUrl.toString()).send('Redirecting to Twitch...');
 });
@@ -261,7 +322,7 @@ app.get('/auth/clips/login', (req, res) => {
   authUrl.searchParams.set('client_id', clientId);
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req).replace('/auth/callback', '/auth/clips/callback'));
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'clips:edit');
+  authUrl.searchParams.set('scope', 'clips:edit offline_access');
   res.set('Cache-Control', 'no-store');
   res.status(302).set('Location', authUrl.toString()).send('Redirecting to Twitch...');
 });
@@ -291,14 +352,6 @@ app.get('/auth/channel/callback', async (req, res) => {
   }).catch(() => null);
 
   if (user) {
-    channelTokens.set(user.login.toLowerCase(), {
-      access_token: user.access_token,
-      channel_login: user.login,
-      display_name: user.display_name,
-      channel_id: user.id,
-      token_obtained_at: user.token_obtained_at,
-      token_expires_in: user.token_expires_in
-    });
   }
 });
 
@@ -318,10 +371,6 @@ app.post('/auth/logout', (_req, res) => {
 
 app.post('/auth/channel/logout', (req, res) => {
   try {
-    const login = req.channel?.channel_login;
-    if (login) {
-      channelTokens.delete(String(login).toLowerCase());
-    }
   } catch (_) { }
   res.clearCookie('channel_auth');
   res.json({ ok: true });
@@ -337,7 +386,7 @@ app.get('/me', (req, res) => {
   res.json({ authenticated: true, user: req.user });
 });
 
-app.get('/channel/me', (req, res) => {
+app.get('/channel/me', async (req, res) => {
   if (!req.channel) return res.status(401).json({ authenticated: false });
 
   const channelId = (req.channel.channel_id != null)
@@ -346,15 +395,18 @@ app.get('/channel/me', (req, res) => {
 
   let authCode = null;
   try {
-    const payload = JSON.stringify({
-      id: channelId,
-      token: req.channel.access_token,
-      refresh_token: req.channel.refresh_token || null
+    await upsertTokenRecord({
+      user_id: channelId,
+      login: req.channel.login,
+      type: 'channel',
+      access_token: req.channel.access_token,
+      refresh_token: req.channel.refresh_token || null,
+      scope: 'moderator:read:followers',
+      token_obtained_at: req.channel.token_obtained_at,
+      token_expires_in: req.channel.token_expires_in
     });
-    authCode = encrypt(payload);
-  } catch (err) {
-    console.error('Error generating auth code:', err);
-  }
+    authCode = encrypt(JSON.stringify({ user_id: channelId, type: 'channel' }));
+  } catch (_) { }
 
   const channelPayload = { ...req.channel };
   if (channelPayload.channel_id == null && channelId != null) channelPayload.channel_id = channelId;
@@ -366,19 +418,23 @@ app.get('/channel/me', (req, res) => {
   });
 });
 
-app.get('/clips/me', (req, res) => {
+app.get('/clips/me', async (req, res) => {
   if (!req.clips) return res.status(401).json({ authenticated: false });
 
   let authCode = null;
   try {
-    const payload = JSON.stringify({
-      id: req.clips.id,
-      token: req.clips.access_token
+    await upsertTokenRecord({
+      user_id: req.clips.id,
+      login: req.clips.login,
+      type: 'clips',
+      access_token: req.clips.access_token,
+      refresh_token: req.clips.refresh_token || null,
+      scope: 'clips:edit',
+      token_obtained_at: req.clips.token_obtained_at,
+      token_expires_in: req.clips.token_expires_in
     });
-    authCode = encrypt(payload);
-  } catch (err) {
-    console.error('Error generating clips auth code:', err);
-  }
+    authCode = encrypt(JSON.stringify({ user_id: req.clips.id, type: 'clips' }));
+  } catch (_) { }
 
   res.json({
     authenticated: true,
@@ -433,43 +489,26 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
   const ping = ((req.query.ping || 'false').toString().trim().toLowerCase() === 'true');
   const lang = (req.query.lang || 'en').toString().trim();
 
-  const { userId: modId, token: tokenParam } = extractAuthCredentials(req);
+  const { userId: modId, token: tokenParam, refreshToken: authRefresh } = await extractAuthCredentials(req);
 
   if (!TWITCH_LOGIN_REGEX.test(streamer) || !TWITCH_LOGIN_REGEX.test(viewer)) {
     return res.status(400).send('invalid parameters');
   }
 
   let channelToken = null;
-  const streamerLower = streamer.toLowerCase();
+  let dbRec = null;
+  let refreshToken = authRefresh || null;
 
   if (tokenParam) {
     channelToken = tokenParam;
   }
 
-  if (modId && req.channel?.access_token && String(req.channel.channel_id) === modId) {
-    channelToken = channelToken || req.channel.access_token;
-  }
-  if (!channelToken && modId) {
-    for (const item of channelTokens.values()) {
-      if (String(item.channel_id) === modId) {
-        channelToken = item.access_token;
-        break;
-      }
-    }
-  }
-  if (!channelToken && req.channel?.access_token) {
-    channelToken = req.channel.access_token;
-  }
-  if (!channelToken && channelTokens.has(streamerLower)) {
-    const item = channelTokens.get(streamerLower);
-    channelToken = item?.access_token || null;
-  }
   if (!channelToken) {
-    const any = channelTokens.values().next().value;
-    if (any?.access_token) channelToken = any.access_token;
-  }
-  if (!channelToken && process.env.TWITCH_CHANNEL_TOKEN) {
-    channelToken = process.env.TWITCH_CHANNEL_TOKEN;
+    dbRec = await findTokenByLoginType(streamer.toLowerCase(), 'channel');
+    if (dbRec?.access_token) {
+      channelToken = dbRec.access_token;
+      refreshToken = dbRec.refresh_token || refreshToken;
+    }
   }
   if (!channelToken) {
     return res.status(401).send('channel token not configured');
@@ -487,6 +526,27 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
     }
   } catch (err) {
     const status = err?.statusCode || 500;
+    if (status === 401 && refreshToken) {
+      try {
+        const r = await refreshAccessToken(refreshToken);
+        channelToken = r.access_token;
+        if (dbRec) {
+          await upsertTokenRecord({ user_id: dbRec.user_id, login: dbRec.login, type: 'channel', access_token: r.access_token, refresh_token: r.refresh_token || dbRec.refresh_token, scope: (dbRec.scope || 'moderator:read:followers offline_access'), token_obtained_at: Date.now(), token_expires_in: r.expires_in });
+        }
+        if (format === 'json') {
+          const json = await getFollowageJsonByFollowers({ viewer, channel: streamer, channelToken });
+          res.type('application/json');
+          return res.json(json);
+        } else {
+          const text = await getFollowageTextByPattern({ viewer, channel: streamer, pattern: format, ping, channelToken, lang });
+          res.type('text/plain');
+          return res.send(text);
+        }
+      } catch (e2) {
+        const st = e2?.statusCode || 500;
+        return res.status(st).send('error');
+      }
+    }
     return res.status(status).send('error');
   }
 });
@@ -494,7 +554,7 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
 app.post('/api/clips/create', async (req, res) => {
   try {
     const creator = (req.query.creator || '').toString().trim();
-    const { userId: extractedId, token: extractedToken } = extractAuthCredentials(req);
+    const { userId: extractedId, token: extractedToken, refreshToken: extractedRefresh } = await extractAuthCredentials(req);
 
     let userToken = extractedToken || req.clips?.access_token;
     let userId = extractedId || req.clips?.id;
@@ -531,6 +591,29 @@ app.post('/api/clips/create', async (req, res) => {
     const status = err?.statusCode || 500;
     const lang = (req.query.lang || 'es').toString().trim();
     const wantText = ((req.query.format || '').toString().trim() === 'text');
+    if (status === 401 && extractedRefresh) {
+      try {
+        const r = await refreshAccessToken(extractedRefresh);
+        const creator = (req.query.creator || '').toString().trim();
+        const channelParam = (req.query.channel || req.body?.channel || '').toString().trim();
+        let broadcasterId;
+        if (channelParam) {
+          const channelUser = await getUserByLogin(channelParam);
+          broadcasterId = channelUser?.id || userId;
+        } else {
+          broadcasterId = userId;
+        }
+        userToken = r.access_token;
+        await upsertTokenRecord({ user_id: userId, login: '', type: 'clips', access_token: r.access_token, refresh_token: r.refresh_token || extractedRefresh, scope: 'clips:edit offline_access', token_obtained_at: Date.now(), token_expires_in: r.expires_in });
+        const clipData2 = await createClip({ broadcasterId, userToken });
+        if (wantText) {
+          const clipUrl = clipData2.url || '';
+          const msgOk = creator ? `✅ Clip creado por ${creator}: ${clipUrl}` : `✅ Clip creado: ${clipUrl}`;
+          return res.type('text/plain').status(200).send(msgOk);
+        }
+        return res.json(clipData2);
+      } catch (_e2) { /* fall through to error mapping */ }
+    }
     let msg;
     if (status === 401) {
       msg = lang === 'es' ? 'Debes iniciar sesión para crear clips' : 'Authentication required to create clips';
@@ -552,7 +635,7 @@ app.post('/api/clips/create', async (req, res) => {
 app.get('/api/clips/create', async (req, res) => {
   try {
     const creator = (req.query.creator || '').toString().trim();
-    const { userId: extractedId, token: extractedToken } = extractAuthCredentials(req);
+    const { userId: extractedId, token: extractedToken, refreshToken: extractedRefresh } = await extractAuthCredentials(req);
 
     let userToken = extractedToken || req.clips?.access_token;
     let userId = extractedId || req.clips?.id;
@@ -592,6 +675,26 @@ app.get('/api/clips/create', async (req, res) => {
     const status = err?.statusCode || 500;
     const lang = (req.query.lang || 'es').toString().trim();
     const channelParam = (req.query.channel || '').toString().trim();
+    if (status === 401 && extractedRefresh) {
+      try {
+        const r = await refreshAccessToken(extractedRefresh);
+        const creator = (req.query.creator || '').toString().trim();
+        const channelParam2 = (req.query.channel || '').toString().trim();
+        let broadcasterId;
+        if (channelParam2) {
+          const channelUser = await getUserByLogin(channelParam2);
+          broadcasterId = channelUser?.id || userId;
+        } else {
+          broadcasterId = userId;
+        }
+        userToken = r.access_token;
+        await upsertTokenRecord({ user_id: userId, login: '', type: 'clips', access_token: r.access_token, refresh_token: r.refresh_token || extractedRefresh, scope: 'clips:edit offline_access', token_obtained_at: Date.now(), token_expires_in: r.expires_in });
+        const clipData2 = await createClip({ broadcasterId, userToken });
+        const clipUrl = clipData2.url || '';
+        const msgOk = creator ? (lang === 'es' ? `✅ Clip creado por ${creator}: ${clipUrl}` : `✅ Clip created by ${creator}: ${clipUrl}`) : (lang === 'es' ? `✅ Clip creado: ${clipUrl}` : `✅ Clip created: ${clipUrl}`);
+        return res.type('text/plain').status(200).send(msgOk);
+      } catch (_e2) { /* fall through to mapping */ }
+    }
     let msg;
     if (status === 401) msg = lang === 'es' ? 'Debes iniciar sesión para crear clips' : 'Authentication required';
     else if (status === 404) msg = lang === 'es' ? `Canal "${channelParam}" no encontrado` : `Channel "${channelParam}" not found`;

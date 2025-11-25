@@ -13,10 +13,12 @@
     "node": ">=18"
   },
   "dependencies": {
+    "@vercel/functions": "^1.4.1",
     "cookie-parser": "^1.4.7",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "jsonwebtoken": "^9.0.2",
+    "mongodb": "^6.9.0",
     "node-cache": "^5.1.2",
     "serverless-http": "^4.0.0"
   },
