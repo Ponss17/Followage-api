@@ -3,18 +3,25 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Manejo de errores – Followage</title>
+  <title>Error – Followage API</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="/styles.css" />
-  <link rel="icon" href="/imgs/LosPerris-gamer.webp" type="image/webp" sizes="any">
+  <link rel="icon" href="https://www.losperris.site/imgs/LosPerris-gamer.webp" type="image/webp" sizes="any">
+  <meta name="theme-color" content="#1E1E2F">
+  <link rel="apple-touch-icon" href="https://www.losperris.site/imgs/LosPerris-gamer.webp">
+  <meta name="description" content="Página de error de Followage API. Muestra detalle y salud del servicio." />
+  <meta property="og:image" content="https://www.losperris.site/imgs/LosPerris-gamer.webp" />
 </head>
 <body>
   <header class="hero">
     <div class="hero-bg"></div>
     <div class="container">
-      <img class="site-logo tilt" src="/imgs/LosPerris-gamer.webp" alt="LosPerris">
+      <img class="site-logo tilt" src="https://www.losperris.site/imgs/LosPerris-gamer.webp" alt="LosPerris">
       <div class="hero-badge">LosPerris - Ponsscito</div>
-      <h1 class="gradient-text">Manejo de errores</h1>
-      <p>Detalle del error y estado del servicio.</p>
+      <h1 class="gradient-text">Error</h1>
+      <p>Revisa el detalle y el estado del servicio.</p>
     </div>
   </header>
 
@@ -33,27 +40,27 @@
       </div>
       <label>Mensaje</label>
       <div class="result"><code id="errMessage"></code></div>
-
-      <label>JSON del error</label>
-      <div class="result input-row">
-        <pre id="errJson" class="result" style="margin:0"></pre>
-        <button type="button" class="reveal-btn" id="copyErrBtn">Copiar</button>
-      </div>
-
-      <div style="margin-top:10px">
-        <a class="btn" href="/">Volver</a>
-        <a class="btn btn-secondary" id="retryLink" href="#">Reintentar</a>
-      </div>
     </section>
 
     <section class="card">
-      <h2>Estado del servicio</h2>
-      <div class="result input-row">
-        <pre id="healthJson" class="result" style="margin:0"></pre>
-        <button type="button" class="reveal-btn" id="copyHealthBtn">Copiar</button>
-      </div>
-      <div style="margin-top:10px">
-        <a class="btn" href="/health" target="_blank">Abrir /health</a>
+      <h2>Salud del servicio</h2>
+      <div class="grid">
+        <div>
+          <label>Cliente ID</label>
+          <div class="result"><code id="healthClientId"></code></div>
+        </div>
+        <div>
+          <label>Client Secret</label>
+          <div class="result"><code id="healthClientSecret"></code></div>
+        </div>
+        <div>
+          <label>JWT Secret</label>
+          <div class="result"><code id="healthJwt"></code></div>
+        </div>
+        <div>
+          <label>Mongo URI</label>
+          <div class="result"><code id="healthMongo"></code></div>
+        </div>
       </div>
     </section>
   </main>
@@ -65,53 +72,42 @@
   </footer>
 
   <script>
-    const p = new URLSearchParams(location.search);
-    const status = p.get('status') || '';
-    const endpoint = p.get('endpoint') || '';
-    const message = p.get('message') || '';
-    const errObj = { status, endpoint, message, timestamp: new Date().toISOString() };
+    const q = new URLSearchParams(window.location.search);
+    const s = q.get('status') || '';
+    const ep = q.get('endpoint') || '';
+    const msg = q.get('message') || '';
 
-    const errStatusEl = document.getElementById('errStatus');
-    const errEndpointEl = document.getElementById('errEndpoint');
-    const errMessageEl = document.getElementById('errMessage');
-    const errJsonEl = document.getElementById('errJson');
-    const retryLink = document.getElementById('retryLink');
-    const copyErrBtn = document.getElementById('copyErrBtn');
-    const healthJsonEl = document.getElementById('healthJson');
-    const copyHealthBtn = document.getElementById('copyHealthBtn');
+    const errStatus = document.getElementById('errStatus');
+    const errEndpoint = document.getElementById('errEndpoint');
+    const errMessage = document.getElementById('errMessage');
 
-    errStatusEl.textContent = status;
-    errEndpointEl.textContent = endpoint;
-    errMessageEl.textContent = message;
-    errJsonEl.textContent = JSON.stringify(errObj, null, 2);
+    if (errStatus) errStatus.textContent = s;
+    if (errEndpoint) errEndpoint.textContent = ep;
+    if (errMessage) errMessage.textContent = msg;
 
-    retryLink.href = endpoint || '/';
-
-    async function copy(text, btn) {
-      try {
-        await navigator.clipboard.writeText(text);
-        const prev = btn.textContent;
-        btn.textContent = 'Copiado';
-        setTimeout(() => btn.textContent = prev, 1500);
-      } catch (_) {}
-    }
-
-    if (copyErrBtn) {
-      copyErrBtn.addEventListener('click', () => copy(errJsonEl.textContent, copyErrBtn));
-    }
-    if (copyHealthBtn) {
-      copyHealthBtn.addEventListener('click', () => copy(healthJsonEl.textContent, copyHealthBtn));
-    }
-
-    (async () => {
-      try {
-        const r = await fetch('/health');
-        const h = await r.json();
-        healthJsonEl.textContent = JSON.stringify(h, null, 2);
-      } catch (_) {
-        healthJsonEl.textContent = JSON.stringify({ error: true }, null, 2);
-      }
-    })();
+    fetch('/health').then(async r => {
+      if (!r.ok) throw new Error('health');
+      const data = await r.json();
+      const cfg = data?.config || {};
+      const ok = v => v ? 'OK' : 'Falta';
+      const healthClientId = document.getElementById('healthClientId');
+      const healthClientSecret = document.getElementById('healthClientSecret');
+      const healthJwt = document.getElementById('healthJwt');
+      const healthMongo = document.getElementById('healthMongo');
+      if (healthClientId) healthClientId.textContent = ok(cfg.hasClientId);
+      if (healthClientSecret) healthClientSecret.textContent = ok(cfg.hasClientSecret);
+      if (healthJwt) healthJwt.textContent = ok(cfg.hasJwtSecret);
+      if (healthMongo) healthMongo.textContent = ok(cfg.hasMongoUri);
+    }).catch(() => {
+      const healthClientId = document.getElementById('healthClientId');
+      const healthClientSecret = document.getElementById('healthClientSecret');
+      const healthJwt = document.getElementById('healthJwt');
+      const healthMongo = document.getElementById('healthMongo');
+      if (healthClientId) healthClientId.textContent = 'Error';
+      if (healthClientSecret) healthClientSecret.textContent = 'Error';
+      if (healthJwt) healthJwt.textContent = 'Error';
+      if (healthMongo) healthMongo.textContent = 'Error';
+    });
   </script>
 </body>
 </html>
