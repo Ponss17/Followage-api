@@ -11,8 +11,6 @@
   <link rel="icon" href="https://www.losperris.site/imgs/LosPerris-gamer.ico" type="image/x-icon" sizes="any">
   <meta name="theme-color" content="#1E1E2F">
   <link rel="apple-touch-icon" href="https://www.losperris.site/imgs/LosPerris-gamer.ico">
-  <meta name="description" content="Página de error de Followage API. Muestra detalle y salud del servicio." />
-  <meta property="og:image" content="https://www.losperris.site/imgs/LosPerris-gamer.ico" />
 </head>
 <body>
   <header class="hero">
@@ -22,6 +20,9 @@
       <div class="hero-badge">LosPerris - Ponsscito</div>
       <h1 class="gradient-text">Error</h1>
       <p>Revisa el detalle y el estado del servicio.</p>
+      <div class="cta">
+        <a class="btn" href="/">Inicio</a>
+      </div>
     </div>
   </header>
 
@@ -76,11 +77,9 @@
     const s = q.get('status') || '';
     const ep = q.get('endpoint') || '';
     const msg = q.get('message') || '';
-
     const errStatus = document.getElementById('errStatus');
     const errEndpoint = document.getElementById('errEndpoint');
     const errMessage = document.getElementById('errMessage');
-
     if (errStatus) errStatus.textContent = s;
     if (errEndpoint) errEndpoint.textContent = ep;
     if (errMessage) errMessage.textContent = msg;
@@ -90,23 +89,15 @@
       const data = await r.json();
       const cfg = data?.config || {};
       const ok = v => v ? 'OK' : 'Falta';
-      const healthClientId = document.getElementById('healthClientId');
-      const healthClientSecret = document.getElementById('healthClientSecret');
-      const healthJwt = document.getElementById('healthJwt');
-      const healthMongo = document.getElementById('healthMongo');
-      if (healthClientId) healthClientId.textContent = ok(cfg.hasClientId);
-      if (healthClientSecret) healthClientSecret.textContent = ok(cfg.hasClientSecret);
-      if (healthJwt) healthJwt.textContent = ok(cfg.hasJwtSecret);
-      if (healthMongo) healthMongo.textContent = ok(cfg.hasMongoUri);
+      document.getElementById('healthClientId').textContent = ok(cfg.hasClientId);
+      document.getElementById('healthClientSecret').textContent = ok(cfg.hasClientSecret);
+      document.getElementById('healthJwt').textContent = ok(cfg.hasJwtSecret);
+      document.getElementById('healthMongo').textContent = ok(cfg.hasMongoUri);
     }).catch(() => {
-      const healthClientId = document.getElementById('healthClientId');
-      const healthClientSecret = document.getElementById('healthClientSecret');
-      const healthJwt = document.getElementById('healthJwt');
-      const healthMongo = document.getElementById('healthMongo');
-      if (healthClientId) healthClientId.textContent = 'Error';
-      if (healthClientSecret) healthClientSecret.textContent = 'Error';
-      if (healthJwt) healthJwt.textContent = 'Error';
-      if (healthMongo) healthMongo.textContent = 'Error';
+      document.getElementById('healthClientId').textContent = 'Error';
+      document.getElementById('healthClientSecret').textContent = 'Error';
+      document.getElementById('healthJwt').textContent = 'Error';
+      document.getElementById('healthMongo').textContent = 'Error';
     });
   </script>
 </body>
