@@ -177,10 +177,10 @@ async function refreshChannelAuth() {
         if (channelNotice) channelNotice.style.display = 'none';
         try {
           const ch = data.channel || {};
-          const chId = ch.channel_id != null ? String(ch.channel_id) : '';
+          const chId = ch.channel_id != null ? String(ch.channel_id) : (ch.id != null ? String(ch.id) : '');
           const chToken = ch.access_token || '';
-          if (moderatorIdEl && chId) {
-            moderatorIdEl.value = chId;
+          if (moderatorIdEl) {
+            if (chId) moderatorIdEl.value = chId;
             moderatorIdEl.type = 'text';
           }
           if (channelTokenEl && chToken) {
