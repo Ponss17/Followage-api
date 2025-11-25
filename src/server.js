@@ -101,9 +101,14 @@ async function extractAuthCredentials(req) {
       if (payload && payload.user_id && payload.type) {
         const rec = await findTokenByUserType(payload.user_id, payload.type);
         if (rec) {
-          userId = String(rec.user_id);
-          token = rec.access_token || token;
-          refreshToken = rec.refresh_token || null;
+          const expected = Number(rec.code_nonce || 0);
+          const hasNonce = payload.nonce != null;
+          const nonceOk = hasNonce ? (Number(payload.nonce) === expected) : (expected === 0);
+          if (nonceOk) {
+            userId = String(rec.user_id);
+            token = rec.access_token || token;
+            refreshToken = rec.refresh_token || null;
+          }
         }
       } else if (payload && payload.id && payload.token) {
         userId = payload.id;
@@ -531,7 +536,7 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
         const r = await refreshAccessToken(refreshToken);
         channelToken = r.access_token;
         if (dbRec) {
-          await upsertTokenRecord({ user_id: dbRec.user_id, login: dbRec.login, type: 'channel', access_token: r.access_token, refresh_token: r.refresh_token || dbRec.refresh_token, scope: (dbRec.scope || 'moderator:read:followers offline_access'), token_obtained_at: Date.now(), token_expires_in: r.expires_in });
+          await upsertTokenRecord({ user_id: dbRec.user_id, login: dbRec.login, type: 'channel', access_token: r.access_token, refresh_token: r.refresh_token || dbRec.refresh_token, scope: 'moderator:read:followers', token_obtained_at: Date.now(), token_expires_in: r.expires_in });
         }
         if (format === 'json') {
           const json = await getFollowageJsonByFollowers({ viewer, channel: streamer, channelToken });
@@ -604,7 +609,7 @@ app.post('/api/clips/create', async (req, res) => {
           broadcasterId = userId;
         }
         userToken = r.access_token;
-        await upsertTokenRecord({ user_id: userId, login: '', type: 'clips', access_token: r.access_token, refresh_token: r.refresh_token || extractedRefresh, scope: 'clips:edit offline_access', token_obtained_at: Date.now(), token_expires_in: r.expires_in });
+        await upsertTokenRecord({ user_id: userId, login: '', type: 'clips', access_token: r.access_token, refresh_token: r.refresh_token || extractedRefresh, scope: 'clips:edit', token_obtained_at: Date.now(), token_expires_in: r.expires_in });
         const clipData2 = await createClip({ broadcasterId, userToken });
         if (wantText) {
           const clipUrl = clipData2.url || '';
@@ -688,7 +693,7 @@ app.get('/api/clips/create', async (req, res) => {
           broadcasterId = userId;
         }
         userToken = r.access_token;
-        await upsertTokenRecord({ user_id: userId, login: '', type: 'clips', access_token: r.access_token, refresh_token: r.refresh_token || extractedRefresh, scope: 'clips:edit offline_access', token_obtained_at: Date.now(), token_expires_in: r.expires_in });
+        await upsertTokenRecord({ user_id: userId, login: '', type: 'clips', access_token: r.access_token, refresh_token: r.refresh_token || extractedRefresh, scope: 'clips:edit', token_obtained_at: Date.now(), token_expires_in: r.expires_in });
         const clipData2 = await createClip({ broadcasterId, userToken });
         const clipUrl = clipData2.url || '';
         const msgOk = creator ? (lang === 'es' ? `✅ Clip creado por ${creator}: ${clipUrl}` : `✅ Clip created by ${creator}: ${clipUrl}`) : (lang === 'es' ? `✅ Clip creado: ${clipUrl}` : `✅ Clip created: ${clipUrl}`);
