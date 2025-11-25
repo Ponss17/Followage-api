@@ -15,14 +15,24 @@ async function checkClipsAuth() {
             if (commandsSection) {
                 commandsSection.style.display = 'block';
 
-                // User ID y Access Token
-                document.getElementById('userId').value = data.clips.id;
-                document.getElementById('accessToken').value = data.clips.access_token;
+                // User ID y Access Token (con verificación de existencia)
+                const userIdInput = document.getElementById('userId');
+                if (userIdInput) {
+                    userIdInput.value = data.clips.id;
+                }
+
+                const accessTokenInput = document.getElementById('accessToken');
+                if (accessTokenInput) {
+                    accessTokenInput.value = data.clips.access_token;
+                }
 
                 // Auth Code
                 const authCode = data.auth_code;
                 if (authCode) {
-                    document.getElementById('authCode').value = authCode;
+                    const authCodeInput = document.getElementById('authCode');
+                    if (authCodeInput) {
+                        authCodeInput.value = authCode;
+                    }
                 }
 
                 // Generar los comandos
