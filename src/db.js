@@ -1,7 +1,9 @@
 import { MongoClient } from 'mongodb';
-import { attachDatabasePool } from '@vercel/functions';
+import vercelFns from '@vercel/functions';
+const { attachDatabasePool } = vercelFns;
 
 const uri = process.env.MONGODB_URI || process.env.Losperrisapi_MONGODB_URI || process.env.NONOGDB_URI;
+const hasUri = !!uri;
 const dbName = process.env.MONGODB_DB || 'followage';
 
 const options = {
@@ -10,13 +12,40 @@ const options = {
   maxPoolSize: 5
 };
 
-const client = new MongoClient(uri, options);
-attachDatabasePool(client);
+const client = hasUri ? new MongoClient(uri, options) : null;
+if (client && attachDatabasePool) attachDatabasePool(client);
 
 let connected = false;
 let indexesEnsured = false;
 
+const memory = new Map();
+function match(doc, filter) {
+  if (filter.user_id && filter.type) return String(doc.user_id) === String(filter.user_id) && String(doc.type) === String(filter.type);
+  if (filter.login && filter.type) return String(doc.login) === String(filter.login) && String(doc.type) === String(filter.type);
+  return false;
+}
+const memoryCol = {
+  async findOne(filter) {
+    for (const doc of memory.values()) {
+      if (match(doc, filter)) return doc;
+    }
+    return null;
+  },
+  async findOneAndUpdate(filter, update, _options) {
+    let doc = await this.findOne(filter);
+    if (!doc) {
+      doc = { ...filter, ...(update?.$setOnInsert || {}), ...(update?.$set || {}) };
+    } else {
+      doc = { ...doc, ...(update?.$set || {}) };
+    }
+    memory.set(`${doc.user_id || doc.login}:${doc.type}`, doc);
+    return { value: doc };
+  },
+  async createIndex() { return true; }
+};
+
 export async function getTokensCollection() {
+  if (!hasUri) return memoryCol;
   if (!connected) {
     await client.connect();
     connected = true;
