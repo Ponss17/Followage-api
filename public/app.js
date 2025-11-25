@@ -25,7 +25,6 @@ const toggleChannelBtn = document.getElementById('toggleChannelToken');
 const toggleAuthBtn = document.getElementById('toggleAuthCode');
 const authCodeEl = document.getElementById('authCode');
 const regenAuthCodeBtn = document.getElementById('regenAuthCodeBtn');
-const copyAuthCodeBtn = document.getElementById('copyAuthCodeBtn');
 const copyUrlExampleBtn = document.getElementById('copyUrlExampleBtn');
 const copyUrlGenericBtn = document.getElementById('copyUrlGenericBtn');
 
@@ -217,11 +216,6 @@ if (copyUrlGenericBtn && urlGenericExampleEl) {
     copyToClipboard(urlGenericExampleEl.textContent, copyUrlGenericBtn);
   });
 }
-if (copyAuthCodeBtn && authCodeEl) {
-  copyAuthCodeBtn.addEventListener('click', () => {
-    copyToClipboard(authCodeEl.value, copyAuthCodeBtn);
-  });
-}
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -236,8 +230,17 @@ form.addEventListener('submit', async (e) => {
 
   const dict = getDict();
 
-  if (!viewer || !channel) {
+  if (!viewer) {
     resultEl.textContent = dict.completeBoth;
+    return;
+  }
+
+  if (!channel) {
+    const urls = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, authCode);
+    if (urlGenericExampleEl) urlGenericExampleEl.textContent = `$(urlfetch ${urls.genericUrl})`;
+    if (urlGenericBlockEl) urlGenericBlockEl.style.display = '';
+    if (urlBlockEl) urlBlockEl.style.display = 'none';
+    resultEl.textContent = '';
     return;
   }
 
@@ -381,8 +384,14 @@ if (regenAuthCodeBtn && authCodeEl) {
         const moderatorId = (moderatorIdEl?.value || '').toString().trim();
         const channelToken = (channelTokenEl?.value || '').toString().trim();
         const urls = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, code);
-        if (urlExampleEl) urlExampleEl.textContent = `$(urlfetch ${urls.displayUrl})`;
-        if (urlGenericExampleEl) urlGenericExampleEl.textContent = `$(urlfetch ${urls.genericUrl})`;
+        if (!channel) {
+          if (urlGenericExampleEl) urlGenericExampleEl.textContent = `$(urlfetch ${urls.genericUrl})`;
+          if (urlGenericBlockEl) urlGenericBlockEl.style.display = '';
+          if (urlBlockEl) urlBlockEl.style.display = 'none';
+        } else {
+          if (urlExampleEl) urlExampleEl.textContent = `$(urlfetch ${urls.displayUrl})`;
+          if (urlGenericExampleEl) urlGenericExampleEl.textContent = `$(urlfetch ${urls.genericUrl})`;
+        }
       } else {
         throw new Error('no_code');
       }
