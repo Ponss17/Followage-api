@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { getFollowageText, getFollowageJson, getFollowageTextByPattern, getFollowageJsonByFollowers, createClip, getUserByLogin } from './twitch.js';
 import serverlessHttp from 'serverless-http';
 
@@ -17,6 +18,28 @@ app.set('trust proxy', 1);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const publicDir = path.resolve(__dirname, '..', 'public');
+
+// Encryption helpers
+const ENCRYPTION_KEY = crypto.scryptSync(jwtSecret, 'salt', 32);
+const IV_LENGTH = 16;
+
+function encrypt(text) {
+  const iv = crypto.randomBytes(IV_LENGTH);
+  const cipher = crypto.createCipheriv('aes-256-ctr', ENCRYPTION_KEY, iv);
+  let encrypted = cipher.update(text);
+  encrypted = Buffer.concat([encrypted, cipher.final()]);
+  return iv.toString('hex') + ':' + encrypted.toString('hex');
+}
+
+function decrypt(text) {
+  const textParts = text.split(':');
+  const iv = Buffer.from(textParts.shift(), 'hex');
+  const encryptedText = Buffer.from(textParts.join(':'), 'hex');
+  const decipher = crypto.createDecipheriv('aes-256-ctr', ENCRYPTION_KEY, iv);
+  let decrypted = decipher.update(encryptedText);
+  decrypted = Buffer.concat([decrypted, decipher.final()]);
+  return decrypted.toString();
+}
 
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
@@ -310,12 +333,46 @@ app.get('/me', (req, res) => {
 
 app.get('/channel/me', (req, res) => {
   if (!req.channel) return res.status(401).json({ authenticated: false });
-  res.json({ authenticated: true, channel: req.channel });
+
+  // auth code
+  let authCode = null;
+  try {
+    const payload = JSON.stringify({
+      id: req.channel.channel_id,
+      token: req.channel.access_token
+    });
+    authCode = encrypt(payload);
+  } catch (err) {
+    console.error('Error generating auth code:', err);
+  }
+
+  res.json({
+    authenticated: true,
+    channel: req.channel,
+    auth_code: authCode
+  });
 });
 
 app.get('/clips/me', (req, res) => {
   if (!req.clips) return res.status(401).json({ authenticated: false });
-  res.json({ authenticated: true, clips: req.clips });
+
+  // auth code clips
+  let authCode = null;
+  try {
+    const payload = JSON.stringify({
+      id: req.clips.id,
+      token: req.clips.access_token
+    });
+    authCode = encrypt(payload);
+  } catch (err) {
+    console.error('Error generating clips auth code:', err);
+  }
+
+  res.json({
+    authenticated: true,
+    clips: req.clips,
+    auth_code: authCode
+  });
 });
 
 app.get('/api/followage', async (req, res) => {
@@ -364,7 +421,23 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
   const format = (req.query.format || 'ymdhis').toString().trim();
   const ping = ((req.query.ping || 'false').toString().trim().toLowerCase() === 'true');
   const lang = (req.query.lang || 'en').toString().trim();
-  const tokenParam = (req.query.token || req.query.mod_token || '').toString().trim();
+
+  // Auth Code 
+  const authCode = (req.query.auth || req.query.code || '').toString().trim();
+  let tokenParam = (req.query.token || req.query.mod_token || '').toString().trim();
+  let modId = (req.query.moderatorId || '').toString().trim();
+
+  if (authCode) {
+    try {
+      const decrypted = JSON.parse(decrypt(authCode));
+      if (decrypted.id && decrypted.token) {
+        modId = decrypted.id;
+        tokenParam = decrypted.token;
+      }
+    } catch (err) {
+      console.error('Error decrypting auth code:', err);
+    }
+  }
 
   const loginRe = /^[A-Za-z0-9_]{1,32}$/;
   if (!loginRe.test(streamer) || !loginRe.test(viewer)) {
@@ -373,7 +446,6 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
 
   let channelToken = null;
   const streamerLower = streamer.toLowerCase();
-  const modId = (req.query.moderatorId || '').toString().trim();
 
   if (tokenParam) {
     channelToken = tokenParam;
@@ -429,9 +501,22 @@ app.post('/api/clips/create', async (req, res) => {
     const queryToken = (req.query.token || '').toString().trim();
     const queryUserId = (req.query.user_id || '').toString().trim();
     const creator = (req.query.creator || '').toString().trim();
+    const authCode = (req.query.auth || req.query.code || '').toString().trim();
 
     let userToken = req.clips?.access_token;
     let userId = req.clips?.id;
+
+    if (authCode) {
+      try {
+        const decrypted = JSON.parse(decrypt(authCode));
+        if (decrypted.id && decrypted.token) {
+          userId = decrypted.id;
+          userToken = decrypted.token;
+        }
+      } catch (err) {
+        console.error('Error decrypting clips auth code:', err);
+      }
+    }
 
     if (queryToken && queryUserId) {
       userToken = queryToken;
@@ -531,4 +616,4 @@ if (!isServerless) {
   app.listen(port, () => {
     console.log(`Followage API escuchando en http://localhost:${port}`);
   });
-} 
+}

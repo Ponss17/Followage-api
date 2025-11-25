@@ -99,10 +99,19 @@
           </label>
         </div>
 
+        <div class="grid">
+          <label>
+            Código de Autenticación (Seguro)
+            <div class="input-row">
+              <input type="text" id="authCode" placeholder="Se genera al iniciar sesión" readonly />
+            </div>
+            <small class="hint">Usa este código en lugar de tu ID y Token para mayor seguridad.</small>
+          </label>
+        </div>
 
         <div class="grid">
           <label>
-            Moderator ID (opcional)
+            Moderator ID (Legacy)
             <div class="input-row">
               <input type="password" id="moderatorId" placeholder="ID de moderador (numérico)" />
               <button type="button" class="reveal-btn" id="toggleModeratorId">Mostrar</button>
@@ -110,7 +119,7 @@
             <small class="hint">Se completa automáticamente tras iniciar sesión Canal/Moderador; opcional.</small>
           </label>
           <label>
-            Token del canal/moderador (opcional)
+            Token del canal/moderador (Legacy)
             <div class="input-row">
               <input type="password" id="channelToken" placeholder="Pegue aquí el OAuth del mod" />
               <button type="button" class="reveal-btn" id="toggleChannelToken">Mostrar</button>
@@ -174,8 +183,8 @@
           normalmente no se requieren.</li>
       </ul>
       <p>Ejemplos Nightbot (listos para copiar):</p>
-      <pre><code>$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&ping=false&lang=es&moderatorId=(tu_id)&token=(tu_token))</code></pre>
-      <pre><code>$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=json&lang=en&ping=true&moderatorId=(tu_id)&token=(tu_token))</code></pre>
+      <pre><code>$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&ping=false&lang=es&auth=(tu_codigo))</code></pre>
+      <pre><code>$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=json&lang=en&ping=true&auth=(tu_codigo))</code></pre>
       <p class="notice">Aviso: si incluyes <code>token</code> en la URL quedará visible en el comando. Usa un token
         dedicado/rotatorio y revócalo si es necesario.</p>
     </section>

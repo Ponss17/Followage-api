@@ -19,21 +19,32 @@ async function checkClipsAuth() {
                 document.getElementById('userId').value = data.clips.id;
                 document.getElementById('accessToken').value = data.clips.access_token;
 
+                // Auth Code
+                const authCode = data.auth_code;
+                if (authCode) {
+                    document.getElementById('authCode').value = authCode;
+                }
+
                 // Generar los comandos
                 const baseUrl = window.location.origin;
                 const userId = data.clips.id;
                 const token = data.clips.access_token;
 
+                let authParam = `user_id=${userId}&token=${token}`;
+                if (authCode) {
+                    authParam = `auth=${authCode}`;
+                }
+
                 // StreamElements
-                const seCommand = `$(customapi.${baseUrl}/api/clips/create?user_id=${userId}&token=${token}&channel=$(channel)&creator=\${user})`;
+                const seCommand = `$(customapi.${baseUrl}/api/clips/create?${authParam}&channel=$(channel)&creator=\${user})`;
                 document.getElementById('streamElementsCommand').textContent = seCommand;
 
                 // Nightbot
-                const nbCommand = `$(urlfetch ${baseUrl}/api/clips/create?user_id=${userId}&token=${token}&channel=$(channel)&creator=$(user))`;
+                const nbCommand = `$(urlfetch ${baseUrl}/api/clips/create?${authParam}&channel=$(channel)&creator=$(user))`;
                 document.getElementById('nightbotCommand').textContent = nbCommand;
 
                 // Streamlabs Chatbot
-                const slCommand = `$readapi(${baseUrl}/api/clips/create?user_id=${userId}&token=${token}&channel=$mychannel&creator=$user)`;
+                const slCommand = `$readapi(${baseUrl}/api/clips/create?${authParam}&channel=$mychannel&creator=$user)`;
                 document.getElementById('streamlabsCommand').textContent = slCommand;
             }
 
@@ -75,6 +86,24 @@ function setupToggle(btnId, inputId) {
 // toggles
 setupToggle('toggleUserId', 'userId');
 setupToggle('toggleAccessToken', 'accessToken');
+setupToggle('toggleAuthCode', 'authCode');
+
+const copyAuthBtn = document.getElementById('toggleAuthCode');
+if (copyAuthBtn) {
+    copyAuthBtn.addEventListener('click', () => {
+        const input = document.getElementById('authCode');
+        if (input && input.value) {
+            input.select();
+            navigator.clipboard.writeText(input.value).then(() => {
+                const originalText = copyAuthBtn.textContent;
+                copyAuthBtn.textContent = '¡Copiado!';
+                setTimeout(() => {
+                    copyAuthBtn.textContent = originalText;
+                }, 2000);
+            });
+        }
+    });
+}
 
 // Login boton
 document.getElementById('clipsLoginBtn').addEventListener('click', () => {

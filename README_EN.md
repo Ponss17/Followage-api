@@ -15,33 +15,33 @@ Check how long a user has been following your channel.
 Add this command to your Nightbot:
 
 ```
-!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=en&moderatorId=(your_id)&token=(your_token))
+!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=en&auth=(your_secure_code))
 ```
 
 **To check another user:**
 ```
-!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=ymdhis&lang=en&moderatorId=(your_id)&token=(your_token))
+!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=ymdhis&lang=en&auth=(your_secure_code))
 ```
 
 **In Spanish:**
 ```
-!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es&moderatorId=(your_id)&token=(your_token))
+!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es&auth=(your_secure_code))
 ```
 
 ### How to use it in StreamElements
 
 ```
-!command add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/${user}?format=ymdhis&lang=en&moderatorId=(your_id)&token=(your_token))
+!command add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/${user}?format=ymdhis&lang=en&auth=(your_secure_code))
 ```
 
 ### Nightbot Examples (ready to copy)
 
 ```
-$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&ping=false&lang=en&moderatorId=(your_id)&token=(your_token))
+$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&ping=false&lang=en&auth=(your_secure_code))
 ```
 
 ```
-$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=json&lang=es&ping=true&moderatorId=(your_id)&token=(your_token))
+$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=json&lang=es&ping=true&auth=(your_secure_code))
 ```
 
 ---
@@ -55,26 +55,27 @@ Create Twitch clips using a chat command.
 1. Go to [www.losperris.site/twitch/clips/](https://www.losperris.site/twitch/clips/)
 2. Click **"Sign in for Clips"**
 3. Authorize the application
-4. Copy your **User ID** and **Access Token**
+4. Copy your **Secure Auth Code**
 
 ### Step 2: Add the command to your bot
 
 **Nightbot:**
 ```
-!commands add !clip $(urlfetch https://www.losperris.site/api/clips/create?user_id=(your_user_id)&token=(your_token)&channel=$(channel)&creator=$(user))
+!commands add !clip $(urlfetch https://www.losperris.site/api/clips/create?auth=(your_secure_code)&channel=$(channel)&creator=$(user))
 ```
 
 **StreamElements:**
 ```
-!command add !clip $(urlfetch https://www.losperris.site/api/clips/create?user_id=(your_user_id)&token=(your_token)&channel=$(channel)&creator=${user})
+!command add !clip $(urlfetch https://www.losperris.site/api/clips/create?auth=(your_secure_code)&channel=$(channel)&creator=${user})
 ```
 
 **Streamlabs:**
 ```
-!addcom !clip $(urlfetch https://www.losperris.site/api/clips/create?user_id=(your_user_id)&token=(your_token)&channel=$mychannel&creator=$user)
+!addcom !clip $(urlfetch https://www.losperris.site/api/clips/create?auth=(your_secure_code)&channel=$mychannel&creator=$user)
 ```
 
-> ⚠️ **Important**: Replace `(your_user_id)` and `(your_token)` with the values you copied in Step 1.
+> ⚠️ **Important**: Replace `(your_secure_code)` with the value you copied in Step 1.
+> ℹ️ **Note**: The legacy `user_id` and `token` parameters still work, but using `auth` is recommended for better security.
 
 ### Chat response
 

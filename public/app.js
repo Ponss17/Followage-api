@@ -24,6 +24,7 @@ const toggleAdvancedBtn = document.getElementById('toggleAdvancedBtn');
 const advancedSection = document.getElementById('advancedSection');
 const toggleModeratorBtn = document.getElementById('toggleModeratorId');
 const toggleChannelBtn = document.getElementById('toggleChannelToken');
+const authCodeEl = document.getElementById('authCode');
 
 function updateAdvancedToggleLabel() {
   const lang = (langEl?.value || 'es');
@@ -182,6 +183,9 @@ async function refreshChannelAuth() {
           if (channelTokenEl && !channelTokenEl.value && chToken) {
             channelTokenEl.value = chToken;
           }
+          if (authCodeEl && data.auth_code) {
+            authCodeEl.value = data.auth_code;
+          }
         } catch (_) { }
       } else {
         isChannelAuthenticated = false;
@@ -232,6 +236,7 @@ form.addEventListener('submit', async (e) => {
   const format = formatEl.value;
   const moderatorId = (moderatorIdEl?.value || '').trim();
   const channelToken = (channelTokenEl?.value || '').trim();
+  const authCode = (authCodeEl?.value || '').trim();
 
   const dict = getDict();
 
@@ -251,8 +256,12 @@ form.addEventListener('submit', async (e) => {
       const displayUrl = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, displayBase);
       displayUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
       displayUrl.searchParams.set('lang', lang);
-      if (moderatorId) displayUrl.searchParams.set('moderatorId', moderatorId);
-      if (channelToken) displayUrl.searchParams.set('token', channelToken);
+      if (authCode) {
+        displayUrl.searchParams.set('auth', authCode);
+      } else {
+        if (moderatorId) displayUrl.searchParams.set('moderatorId', moderatorId);
+        if (channelToken) displayUrl.searchParams.set('token', channelToken);
+      }
       garretUrlForDisplay = displayUrl.toString();
 
       // URL genérica para Nightbot 
@@ -261,8 +270,12 @@ form.addEventListener('submit', async (e) => {
       genericUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
       genericUrl.searchParams.set('ping', 'false');
       genericUrl.searchParams.set('lang', lang);
-      if (moderatorId) genericUrl.searchParams.set('moderatorId', moderatorId);
-      if (channelToken) genericUrl.searchParams.set('token', channelToken);
+      if (authCode) {
+        genericUrl.searchParams.set('auth', authCode);
+      } else {
+        if (moderatorId) genericUrl.searchParams.set('moderatorId', moderatorId);
+        if (channelToken) genericUrl.searchParams.set('token', channelToken);
+      }
       genericUrlForDisplay = genericUrl.toString();
 
       // URL local
@@ -270,8 +283,12 @@ form.addEventListener('submit', async (e) => {
       fetchUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
       fetchUrl.searchParams.set('ping', 'false');
       fetchUrl.searchParams.set('lang', lang);
-      if (moderatorId) fetchUrl.searchParams.set('moderatorId', moderatorId);
-      if (channelToken) fetchUrl.searchParams.set('token', channelToken);
+      if (authCode) {
+        fetchUrl.searchParams.set('auth', authCode);
+      } else {
+        if (moderatorId) fetchUrl.searchParams.set('moderatorId', moderatorId);
+        if (channelToken) fetchUrl.searchParams.set('token', channelToken);
+      }
       const r = await fetch(fetchUrl);
       if (r.ok) {
         resp = r;
