@@ -9,6 +9,79 @@ API gratuita para Twitch con dos herramientas útiles para streamers.
 ## 🔍 Followage - Consulta tiempo de seguimiento
 
 Verifica cuánto tiempo lleva un usuario siguiendo tu canal.
+
+### Cómo usarlo en Nightbot
+
+Agrega este comando en tu Nightbot:
+
+```
+!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es&auth=(tu_codigo_seguro))
+```
+
+**Para consultar a otro usuario:**
+```
+!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=ymdhis&lang=es&auth=(tu_codigo_seguro))
+```
+
+**En inglés:**
+```
+!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=en&auth=(tu_codigo_seguro))
+```
+
+### Cómo usarlo in StreamElements
+
+```
+!command add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/${user}?format=ymdhis&lang=es&auth=(tu_codigo_seguro))
+```
+
+### Ejemplos Nightbot (listos para copiar)
+
+```
+$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&ping=false&lang=es&auth=(tu_codigo_seguro))
+```
+
+```
+$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=json&lang=en&ping=true&auth=(tu_codigo_seguro))
+```
+
+---
+
+## 🎬 Clips - Crear clips desde el chat
+
+Crea clips de Twitch usando un comando de chat.
+
+### Paso 1: Obtén tus credenciales
+
+1. Ve a [www.losperris.site/twitch/clips/](https://www.losperris.site/twitch/clips/)
+2. Haz clic en **"Iniciar sesión para Clips"**
+3. Autoriza la aplicación
+4. Copia tu **Código de Autenticación (Seguro)**
+
+### Paso 2: Agrega el comando en tu bot
+
+**Nightbot:**
+```
+!commands add !clip $(urlfetch https://www.losperris.site/api/clips/create?auth=(tu_codigo_seguro)&channel=$(channel)&creator=$(user))
+```
+
+**StreamElements:**
+```
+!command add !clip $(urlfetch https://www.losperris.site/api/clips/create?auth=(tu_codigo_seguro)&channel=$(channel)&creator=${user})
+```
+
+**Streamlabs:**
+```
+!addcom !clip $(urlfetch https://www.losperris.site/api/clips/create?auth=(tu_codigo_seguro)&channel=$mychannel&creator=$user)
+```
+
+> ⚠️ **Importante**: Reemplaza `(tu_codigo_seguro)` con el valor que copiaste en el Paso 1.
+> ℹ️ **Nota**: Los parámetros antiguos `user_id` y `token` siguen funcionando, pero se recomienda usar `auth` por seguridad.
+
+### Respuesta en el chat
+
+Cuando alguien use el comando `!clip`, el bot responderá:
+
+```
 ✅ Clip creado por NombreUsuario: https://clips.twitch.tv/...
 ```
 
