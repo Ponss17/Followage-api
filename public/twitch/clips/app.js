@@ -4,7 +4,7 @@ async function checkClipsAuth() {
         const resp = await fetch('/clips/me');
         const data = await resp.json();
 
-        if (data.authenticated) {
+        if (data.authenticated && data.clips) {
             document.getElementById('clipsAuthStatus').textContent = `Autenticado como ${data.clips.display_name}`;
             document.getElementById('clipsLoginBtn').style.display = 'none';
             document.getElementById('clipsLogoutBtn').style.display = 'inline-block';
@@ -47,15 +47,24 @@ async function checkClipsAuth() {
 
                 // StreamElements
                 const seCommand = `$(customapi.${baseUrl}/api/clips/create?${authParam}&channel=$(channel)&creator=\${user})`;
-                document.getElementById('streamElementsCommand').textContent = seCommand;
+                const streamElementsCommand = document.getElementById('streamElementsCommand');
+                if (streamElementsCommand) {
+                    streamElementsCommand.textContent = seCommand;
+                }
 
                 // Nightbot
                 const nbCommand = `$(urlfetch ${baseUrl}/api/clips/create?${authParam}&channel=$(channel)&creator=$(user))`;
-                document.getElementById('nightbotCommand').textContent = nbCommand;
+                const nightbotCommand = document.getElementById('nightbotCommand');
+                if (nightbotCommand) {
+                    nightbotCommand.textContent = nbCommand;
+                }
 
                 // Streamlabs Chatbot
                 const slCommand = `$readapi(${baseUrl}/api/clips/create?${authParam}&channel=$mychannel&creator=$user)`;
-                document.getElementById('streamlabsCommand').textContent = slCommand;
+                const streamlabsCommand = document.getElementById('streamlabsCommand');
+                if (streamlabsCommand) {
+                    streamlabsCommand.textContent = slCommand;
+                }
             }
 
             return true;
