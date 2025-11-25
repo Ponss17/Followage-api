@@ -25,15 +25,15 @@ async function checkClipsAuth() {
                 const token = data.clips.access_token;
 
                 // StreamElements
-                const seCommand = `$(customapi.${baseUrl}/api/clips/create?user_id=${userId}&token=${token}&channel=$(channel))`;
+                const seCommand = `$(customapi.${baseUrl}/api/clips/create?user_id=${userId}&token=${token}&channel=$(channel)&creator=\${user})`;
                 document.getElementById('streamElementsCommand').textContent = seCommand;
 
                 // Nightbot
-                const nbCommand = `$(urlfetch ${baseUrl}/api/clips/create?user_id=${userId}&token=${token}&channel=$(channel))`;
+                const nbCommand = `$(urlfetch ${baseUrl}/api/clips/create?user_id=${userId}&token=${token}&channel=$(channel)&creator=$(user))`;
                 document.getElementById('nightbotCommand').textContent = nbCommand;
 
                 // Streamlabs Chatbot
-                const slCommand = `$readapi(${baseUrl}/api/clips/create?user_id=${userId}&token=${token}&channel=$mychannel)`;
+                const slCommand = `$readapi(${baseUrl}/api/clips/create?user_id=${userId}&token=${token}&channel=$mychannel&creator=$user)`;
                 document.getElementById('streamlabsCommand').textContent = slCommand;
             }
 

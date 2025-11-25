@@ -51,20 +51,20 @@ Create Twitch clips using a chat command.
 
 **Nightbot:**
 ```
-!commands add !clip $(urlfetch https://www.losperris.site/api/clips/create?user_id=YOUR_USER_ID&token=YOUR_TOKEN&channel=$(channel)&creator=$(user))
+!commands add !clip $(urlfetch https://www.losperris.site/api/clips/create?user_id=(your_user_id)&token=(your_token)&channel=$(channel)&creator=$(user))
 ```
 
 **StreamElements:**
 ```
-!command add !clip $(urlfetch https://www.losperris.site/api/clips/create?user_id=YOUR_USER_ID&token=YOUR_TOKEN&channel=$(channel)&creator=${user})
+!command add !clip $(urlfetch https://www.losperris.site/api/clips/create?user_id=(your_user_id)&token=(your_token)&channel=$(channel)&creator=${user})
 ```
 
 **Streamlabs:**
 ```
-!addcom !clip $(urlfetch https://www.losperris.site/api/clips/create?user_id=YOUR_USER_ID&token=YOUR_TOKEN&channel=$mychannel&creator=$user)
+!addcom !clip $(urlfetch https://www.losperris.site/api/clips/create?user_id=(your_user_id)&token=(your_token)&channel=$mychannel&creator=$user)
 ```
 
-> ⚠️ **Important**: Replace `YOUR_USER_ID` and `YOUR_TOKEN` with the values you copied in Step 1.
+> ⚠️ **Important**: Replace `(your_user_id)` and `(your_token)` with the values you copied in Step 1.
 
 ### Chat response
 
