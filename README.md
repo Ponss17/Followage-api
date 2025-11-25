@@ -109,7 +109,7 @@ El comando de clips solo funciona en tu canal o en canales donde seas moderador.
 
 Si tienes problemas o preguntas:
 - Visita: [www.losperris.site](https://www.losperris.site)
-- Twitch: [twitch.tv/ponss17](https://twitch.tv/ponss17)
+- Discord: ponsschiquito
 
 ---
 
