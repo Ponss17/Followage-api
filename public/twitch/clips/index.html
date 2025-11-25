@@ -88,6 +88,22 @@
         Puedes usar esto como un comando en el chat para crear y devolver un clip. Actualmente, no hay un sistema de
         votación,
         así que usar el comando una vez generará y devolverá un clip. Por lo tanto, considera hacer este comando solo
+      <div class="grid">
+        <label>
+          Código de Autenticación (Seguro)
+          <div class="input-row">
+            <input type="password" id="authCode" placeholder="Se genera al iniciar sesión Clips" readonly />
+            <div class="input-actions">
+              <button type="button" class="reveal-btn" id="toggleAuthCode">Mostrar</button>
+              <button type="button" class="reveal-btn" id="regenAuthCodeBtn">Regenerar</button>
+            </div>
+          </div>
+          <small class="hint">Regenerar invalida el código anterior y actualiza los comandos.</small>
+        </label>
+      </div>
+      <h3>StreamElements</h3>
+      <div class="input-row"><code id="streamElementsCommand">-</code><button type="button" class="reveal-btn" id="copyStreamElementsBtn">Copiar</button></div>
+
       <h3>Nightbot</h3>
       <div class="input-row"><code id="nightbotCommand">-</code><button type="button" class="reveal-btn" id="copyNightbotBtn">Copiar</button></div>
 

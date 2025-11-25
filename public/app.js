@@ -6,9 +6,13 @@ const formatEl = document.getElementById('format');
 const resultEl = document.getElementById('result');
 const urlBlockEl = document.getElementById('url-block');
 const urlExampleEl = document.getElementById('urlExample');
+const urlPersonalLabelEl = document.getElementById('urlPersonalLabel');
 const urlGenericBlockEl = document.getElementById('url-generic-block');
 const urlGenericExampleEl = document.getElementById('urlGenericExample');
-const urlPersonalLabelEl = document.getElementById('urlPersonalLabel');
+const seUrlBlockEl = document.getElementById('se-url-block');
+const seUrlExampleEl = document.getElementById('seUrlExample');
+const seUrlGenericBlockEl = document.getElementById('se-url-generic-block');
+const seUrlGenericExampleEl = document.getElementById('seUrlGenericExample');
 const urlGenericLabelEl = document.getElementById('urlGenericLabel');
 const authStatusEl = document.getElementById('authStatus');
 const loginBtn = document.getElementById('loginBtn');
@@ -27,6 +31,8 @@ const authCodeEl = document.getElementById('authCode');
 const regenAuthCodeBtn = document.getElementById('regenAuthCodeBtn');
 const copyUrlExampleBtn = document.getElementById('copyUrlExampleBtn');
 const copyUrlGenericBtn = document.getElementById('copyUrlGenericBtn');
+const copySeUrlExampleBtn = document.getElementById('copySeUrlExampleBtn');
+const copySeUrlGenericBtn = document.getElementById('copySeUrlGenericBtn');
 
 let isAuthenticated = false;
 let isChannelAuthenticated = false;
@@ -216,6 +222,16 @@ if (copyUrlGenericBtn && urlGenericExampleEl) {
     copyToClipboard(urlGenericExampleEl.textContent, copyUrlGenericBtn);
   });
 }
+if (copySeUrlExampleBtn && seUrlExampleEl) {
+  copySeUrlExampleBtn.addEventListener('click', () => {
+    copyToClipboard(seUrlExampleEl.textContent, copySeUrlExampleBtn);
+  });
+}
+if (copySeUrlGenericBtn && seUrlGenericExampleEl) {
+  copySeUrlGenericBtn.addEventListener('click', () => {
+    copyToClipboard(seUrlGenericExampleEl.textContent, copySeUrlGenericBtn);
+  });
+}
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -239,7 +255,10 @@ form.addEventListener('submit', async (e) => {
     const urls = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, authCode);
     if (urlGenericExampleEl) urlGenericExampleEl.textContent = `$(urlfetch ${urls.genericUrl})`;
     if (urlGenericBlockEl) urlGenericBlockEl.style.display = '';
+    if (seUrlGenericExampleEl) seUrlGenericExampleEl.textContent = `$(customapi.${urls.genericUrl})`;
+    if (seUrlGenericBlockEl) seUrlGenericBlockEl.style.display = '';
     if (urlBlockEl) urlBlockEl.style.display = 'none';
+    if (seUrlBlockEl) seUrlBlockEl.style.display = 'none';
     resultEl.textContent = '';
     return;
   }
@@ -255,6 +274,14 @@ form.addEventListener('submit', async (e) => {
     const r = await fetch(urls.fetchUrl);
     if (r.ok) {
       resp = r;
+    }
+    if (seUrlBlockEl && seUrlExampleEl && garretUrlForDisplay) {
+      seUrlExampleEl.textContent = `$(customapi.${garretUrlForDisplay})`;
+      seUrlBlockEl.style.display = '';
+    }
+    if (seUrlGenericBlockEl && seUrlGenericExampleEl && genericUrlForDisplay) {
+      seUrlGenericExampleEl.textContent = `$(customapi.${genericUrlForDisplay})`;
+      seUrlGenericBlockEl.style.display = '';
     }
     if (!resp) {
       if (!isAuthenticated) {
@@ -364,6 +391,8 @@ updateRevealButtonsLabel();
 // regenerar código seguro
 if (regenAuthCodeBtn && authCodeEl) {
   regenAuthCodeBtn.addEventListener('click', async () => {
+    const prev = regenAuthCodeBtn.textContent;
+    regenAuthCodeBtn.disabled = true;
     try {
       let resp = await fetch('/channel/me');
       if (resp.status === 401) {
@@ -374,7 +403,6 @@ if (regenAuthCodeBtn && authCodeEl) {
       const code = data?.auth_code || '';
       if (code) {
         authCodeEl.value = code;
-        const prev = regenAuthCodeBtn.textContent;
         regenAuthCodeBtn.textContent = (currentLang() === 'en') ? 'Regenerated' : '¡Regenerado!';
         setTimeout(() => { regenAuthCodeBtn.textContent = prev; }, 1500);
         const viewer = (viewerEl?.value || '').toString().trim();
@@ -387,18 +415,26 @@ if (regenAuthCodeBtn && authCodeEl) {
         if (!channel) {
           if (urlGenericExampleEl) urlGenericExampleEl.textContent = `$(urlfetch ${urls.genericUrl})`;
           if (urlGenericBlockEl) urlGenericBlockEl.style.display = '';
+          if (seUrlGenericExampleEl) seUrlGenericExampleEl.textContent = `$(customapi.${urls.genericUrl})`;
+          if (seUrlGenericBlockEl) seUrlGenericBlockEl.style.display = '';
           if (urlBlockEl) urlBlockEl.style.display = 'none';
+          if (seUrlBlockEl) seUrlBlockEl.style.display = 'none';
         } else {
           if (urlExampleEl) urlExampleEl.textContent = `$(urlfetch ${urls.displayUrl})`;
           if (urlGenericExampleEl) urlGenericExampleEl.textContent = `$(urlfetch ${urls.genericUrl})`;
+          if (seUrlExampleEl) seUrlExampleEl.textContent = `$(customapi.${urls.displayUrl})`;
+          if (seUrlBlockEl) seUrlBlockEl.style.display = '';
+          if (seUrlGenericExampleEl) seUrlGenericExampleEl.textContent = `$(customapi.${urls.genericUrl})`;
+          if (seUrlGenericBlockEl) seUrlGenericBlockEl.style.display = '';
         }
       } else {
         throw new Error('no_code');
       }
     } catch (_) {
-      const prev = regenAuthCodeBtn.textContent;
       regenAuthCodeBtn.textContent = (currentLang() === 'en') ? 'Error' : 'Error';
       setTimeout(() => { regenAuthCodeBtn.textContent = prev; }, 1500);
+    } finally {
+      regenAuthCodeBtn.disabled = false;
     }
   });
 }

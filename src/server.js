@@ -522,10 +522,12 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
   try {
     if (format === 'json') {
       const json = await getFollowageJsonByFollowers({ viewer, channel: streamer, channelToken });
+      res.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
       res.type('application/json');
       return res.json(json);
     } else {
       const text = await getFollowageTextByPattern({ viewer, channel: streamer, pattern: format, ping, channelToken, lang });
+      res.set('Cache-Control', 'public, s-maxage=30, stale-while-revalidate=60');
       res.type('text/plain');
       return res.send(text);
     }
@@ -556,6 +558,23 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
   }
 });
 
+const CLIP_WINDOW_MS = 5 * 60 * 1000;
+const CLIP_MAX = 3;
+const clipRate = new Map();
+function canCreateClip(userId) {
+  const now = Date.now();
+  const key = String(userId || 'anon');
+  const list = clipRate.get(key) || [];
+  const recent = list.filter(t => now - t < CLIP_WINDOW_MS);
+  if (recent.length >= CLIP_MAX) {
+    clipRate.set(key, recent);
+    return false;
+  }
+  recent.push(now);
+  clipRate.set(key, recent);
+  return true;
+}
+
 app.post('/api/clips/create', async (req, res) => {
   try {
     const creator = (req.query.creator || '').toString().trim();
@@ -582,6 +601,14 @@ app.post('/api/clips/create', async (req, res) => {
       broadcasterId = channelUser.id;
     } else {
       broadcasterId = userId;
+    }
+
+    if (!canCreateClip(userId)) {
+      const lang = (req.query.lang || 'es').toString().trim();
+      const wantText = ((req.query.format || '').toString().trim() === 'text') || !!creator;
+      const msg = lang === 'es' ? 'Cooldown: máximo 3 clips cada 5 minutos' : 'Cooldown: max 3 clips per 5 minutes';
+      if (wantText) return res.type('text/plain').status(200).send(msg);
+      return res.status(429).json({ error: 'clip_cooldown', message: msg });
     }
 
     const clipData = await createClip({ broadcasterId, userToken });
@@ -668,6 +695,11 @@ app.get('/api/clips/create', async (req, res) => {
       broadcasterId = channelUser.id;
     } else {
       broadcasterId = userId;
+    }
+
+    if (!canCreateClip(userId)) {
+      const msg = lang === 'es' ? 'Cooldown: máximo 3 clips cada 5 minutos' : 'Cooldown: max 3 clips per 5 minutes';
+      return res.type('text/plain').status(200).send(msg);
     }
 
     const clipData = await createClip({ broadcasterId, userToken });
