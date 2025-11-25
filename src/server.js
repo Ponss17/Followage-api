@@ -426,7 +426,6 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
 
 app.post('/api/clips/create', async (req, res) => {
   try {
-    // Intentar obtener el token de los parámetros de query o del usuario autenticado
     const queryToken = (req.query.token || '').toString().trim();
     const queryUserId = (req.query.user_id || '').toString().trim();
     const creator = (req.query.creator || '').toString().trim();
@@ -434,7 +433,6 @@ app.post('/api/clips/create', async (req, res) => {
     let userToken = req.clips?.access_token;
     let userId = req.clips?.id;
 
-    // Si se proporcionan token y user_id en la query, usarlos
     if (queryToken && queryUserId) {
       userToken = queryToken;
       userId = queryUserId;
@@ -463,7 +461,6 @@ app.post('/api/clips/create', async (req, res) => {
 
     const clipData = await createClip({ broadcasterId, userToken });
 
-    // Si se proporcionó un creator, modificar la respuesta para incluirlo
     if (creator) {
       const clipUrl = clipData.url || '';
       return res.send(`✅ Clip creado por ${creator}: ${clipUrl}`);
