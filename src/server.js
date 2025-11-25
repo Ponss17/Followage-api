@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { getFollowageText, getFollowageJson, getFollowageTextByPattern, getFollowageJsonByFollowers, createClip, getUserByLogin } from './twitch.js';
+import serverlessHttp from 'serverless-http';
 
 dotenv.config();
 
@@ -54,70 +55,26 @@ function getTwitchHeaders(token) {
 }
 
 function extractAuthCredentials(req) {
-  const rawAuth = (req.query.auth || req.query.auth_code || req.query.code || '').toString().trim();
+  const authCode = (req.query.auth || req.query.code || '').toString().trim();
   const queryToken = (req.query.token || req.query.mod_token || '').toString().trim();
   const queryId = (req.query.moderatorId || req.query.user_id || '').toString().trim();
 
   let userId = queryId;
   let token = queryToken;
-  let refreshToken = null;
 
-  if (rawAuth) {
-    const authCode = decodeURIComponent(rawAuth);
+  if (authCode) {
     try {
       const decrypted = JSON.parse(decrypt(authCode));
       if (decrypted.id && decrypted.token) {
         userId = decrypted.id;
         token = decrypted.token;
-        refreshToken = decrypted.refresh_token || null;
       }
-    } catch (_) { }
-  }
-
-  return { userId, token, refreshToken };
-}
-
-function resolveChannelToken(req, streamer) {
-  const { userId: modId, token: tokenParam, refreshToken: authRefresh } = extractAuthCredentials(req);
-  const streamerLower = String(streamer || '').toLowerCase();
-  let channelToken = null;
-  let sourceRefreshToken = null;
-  let usedCookieToken = false;
-  if (tokenParam) {
-    channelToken = tokenParam;
-    sourceRefreshToken = authRefresh || null;
-  }
-  if (!channelToken && modId && req.channel?.access_token && String(req.channel.channel_id) === modId) {
-    channelToken = req.channel.access_token;
-    sourceRefreshToken = req.channel.refresh_token || sourceRefreshToken;
-    usedCookieToken = true;
-  }
-  if (!channelToken && modId) {
-    for (const item of channelTokens.values()) {
-      if (String(item.channel_id) === modId) {
-        channelToken = item.access_token;
-        break;
-      }
+    } catch (err) {
+      console.error('Error decrypting auth code:', err);
     }
   }
-  if (!channelToken && req.channel?.access_token) {
-    channelToken = req.channel.access_token;
-    sourceRefreshToken = req.channel.refresh_token || sourceRefreshToken;
-    usedCookieToken = true;
-  }
-  if (!channelToken && channelTokens.has(streamerLower)) {
-    const item = channelTokens.get(streamerLower);
-    channelToken = item?.access_token || null;
-  }
-  if (!channelToken) {
-    const any = channelTokens.values().next().value;
-    if (any?.access_token) channelToken = any.access_token;
-  }
-  if (!channelToken && process.env.TWITCH_CHANNEL_TOKEN) {
-    channelToken = process.env.TWITCH_CHANNEL_TOKEN;
-  }
-  const authPresent = !!(req.query.auth || req.query.auth_code || req.query.code);
-  return { channelToken, sourceRefreshToken, usedCookieToken, modId, authPresent };
+
+  return { userId, token };
 }
 
 async function handleOAuthCallback(req, res, options) {
@@ -160,7 +117,6 @@ async function handleOAuthCallback(req, res, options) {
       login: user.login,
       display_name: user.display_name,
       access_token: accessToken,
-      refresh_token: tokenJson.refresh_token,
       token_obtained_at: Date.now(),
       token_expires_in: tokenJson.expires_in,
       ...extraData
@@ -205,25 +161,6 @@ function getRedirectUri(req) {
   return `http://localhost:${port}/auth/callback`;
 }
 
-async function refreshAccessToken(refreshToken) {
-  const clientId = process.env.TWITCH_CLIENT_ID;
-  const clientSecret = process.env.TWITCH_CLIENT_SECRET;
-  const url = new URL(TWITCH_TOKEN_URL);
-  url.searchParams.set('client_id', clientId);
-  url.searchParams.set('client_secret', clientSecret);
-  url.searchParams.set('grant_type', 'refresh_token');
-  url.searchParams.set('refresh_token', refreshToken);
-
-  const resp = await fetch(url, { method: 'POST' });
-  if (!resp.ok) {
-    const body = await resp.text();
-    const err = new Error(`Error refrescando token: ${resp.status} ${body}`);
-    err.statusCode = resp.status;
-    throw err;
-  }
-  const json = await resp.json();
-  return { access_token: json.access_token, expires_in: json.expires_in, refresh_token: json.refresh_token || refreshToken };
-}
 
 function readAuth(req, _res, next) {
   const cookies = [
@@ -245,31 +182,6 @@ function readAuth(req, _res, next) {
 
 app.use(readAuth);
 
-async function autoRefreshTokens(req, res, next) {
-  try {
-    const ch = req.channel;
-    if (ch?.refresh_token) {
-      const expAt = (ch.token_obtained_at || 0) + (ch.token_expires_in || 0) * 1000;
-      if (!expAt || Date.now() >= expAt - 60000) {
-        const r = await refreshAccessToken(ch.refresh_token);
-        const merged = { ...ch, access_token: r.access_token, token_obtained_at: Date.now(), token_expires_in: r.expires_in, refresh_token: r.refresh_token };
-        req.channel = merged;
-        setChannelCookie(req, res, merged);
-        channelTokens.set(String(merged.channel_login || merged.login || '').toLowerCase(), {
-          access_token: merged.access_token,
-          channel_login: merged.channel_login || merged.login,
-          display_name: merged.display_name,
-          channel_id: merged.channel_id || merged.id,
-          token_obtained_at: merged.token_obtained_at,
-          token_expires_in: merged.token_expires_in
-        });
-      }
-    }
-  } catch (_) { }
-  next();
-}
-
-app.use(autoRefreshTokens);
 
 function respondError(req, res, opts) {
   const ui = ((req.query.ui || '').toString().trim().toLowerCase() === 'true');
@@ -327,7 +239,7 @@ app.get('/auth/login', (req, res) => {
   authUrl.searchParams.set('client_id', clientId);
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req));
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'user:read:email user:read:follows offline_access');
+  authUrl.searchParams.set('scope', 'user:read:email user:read:follows');
   res.set('Cache-Control', 'no-store');
   res.status(302).set('Location', authUrl.toString()).send('Redirecting to Twitch...');
 });
@@ -338,7 +250,7 @@ app.get('/auth/channel/login', (req, res) => {
   authUrl.searchParams.set('client_id', clientId);
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req).replace('/auth/callback', '/auth/channel/callback'));
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'moderator:read:followers offline_access');
+  authUrl.searchParams.set('scope', 'moderator:read:followers');
   res.set('Cache-Control', 'no-store');
   res.status(302).set('Location', authUrl.toString()).send('Redirecting to Twitch...');
 });
@@ -349,7 +261,7 @@ app.get('/auth/clips/login', (req, res) => {
   authUrl.searchParams.set('client_id', clientId);
   authUrl.searchParams.set('redirect_uri', getRedirectUri(req).replace('/auth/callback', '/auth/clips/callback'));
   authUrl.searchParams.set('response_type', 'code');
-  authUrl.searchParams.set('scope', 'clips:edit offline_access');
+  authUrl.searchParams.set('scope', 'clips:edit');
   res.set('Cache-Control', 'no-store');
   res.status(302).set('Location', authUrl.toString()).send('Redirecting to Twitch...');
 });
@@ -521,24 +433,46 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
   const ping = ((req.query.ping || 'false').toString().trim().toLowerCase() === 'true');
   const lang = (req.query.lang || 'en').toString().trim();
 
+  const { userId: modId, token: tokenParam } = extractAuthCredentials(req);
 
   if (!TWITCH_LOGIN_REGEX.test(streamer) || !TWITCH_LOGIN_REGEX.test(viewer)) {
-    const msg = lang === 'es' ? 'Parámetros inválidos: usa A–Z, 0–9 y _ en canal y usuario' : 'Invalid parameters: use A–Z, 0–9 and _ for channel and user';
-    return format === 'json'
-      ? res.status(400).json({ error: 'invalid_parameters', message: msg })
-      : res.type('text/plain').status(200).send(msg);
+    return res.status(400).send('invalid parameters');
   }
 
-  const { channelToken: channelToken0, sourceRefreshToken, usedCookieToken, modId, authPresent } = resolveChannelToken(req, streamer);
-  let channelToken = channelToken0;
+  let channelToken = null;
+  const streamerLower = streamer.toLowerCase();
 
+  if (tokenParam) {
+    channelToken = tokenParam;
+  }
+
+  if (modId && req.channel?.access_token && String(req.channel.channel_id) === modId) {
+    channelToken = channelToken || req.channel.access_token;
+  }
+  if (!channelToken && modId) {
+    for (const item of channelTokens.values()) {
+      if (String(item.channel_id) === modId) {
+        channelToken = item.access_token;
+        break;
+      }
+    }
+  }
+  if (!channelToken && req.channel?.access_token) {
+    channelToken = req.channel.access_token;
+  }
+  if (!channelToken && channelTokens.has(streamerLower)) {
+    const item = channelTokens.get(streamerLower);
+    channelToken = item?.access_token || null;
+  }
   if (!channelToken) {
-    const msg = authPresent
-      ? (lang === 'es' ? 'Código de autenticación inválido o expirado' : 'Invalid or expired auth code')
-      : (lang === 'es' ? 'Error: token del canal/mod no configurado. Inicia sesión canal/mod o usa ?auth=' : 'Error: channel/mod token not configured. Login channel/mod or use ?auth=');
-    return format === 'json'
-      ? res.status(401).json({ error: authPresent ? 'invalid_auth_code' : 'channel_token_missing', message: msg })
-      : res.type('text/plain').status(200).send(msg);
+    const any = channelTokens.values().next().value;
+    if (any?.access_token) channelToken = any.access_token;
+  }
+  if (!channelToken && process.env.TWITCH_CHANNEL_TOKEN) {
+    channelToken = process.env.TWITCH_CHANNEL_TOKEN;
+  }
+  if (!channelToken) {
+    return res.status(401).send('channel token not configured');
   }
 
   try {
@@ -553,45 +487,7 @@ app.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
     }
   } catch (err) {
     const status = err?.statusCode || 500;
-    const ui = ((req.query.ui || '').toString().trim().toLowerCase() === 'true');
-    if (status === 401 && sourceRefreshToken) {
-      try {
-        const r = await refreshAccessToken(sourceRefreshToken);
-        channelToken = r.access_token;
-        if (usedCookieToken && req.channel) {
-          const merged = {
-            ...req.channel,
-            access_token: r.access_token,
-            token_obtained_at: Date.now(),
-            token_expires_in: r.expires_in,
-            refresh_token: r.refresh_token || req.channel.refresh_token
-          };
-          req.channel = merged;
-          setChannelCookie(req, res, merged);
-          channelTokens.set(String(merged.channel_login || merged.login || '').toLowerCase(), {
-            access_token: merged.access_token,
-            channel_login: merged.channel_login || merged.login,
-            display_name: merged.display_name,
-            channel_id: merged.channel_id || merged.id,
-            token_obtained_at: merged.token_obtained_at,
-            token_expires_in: merged.token_expires_in
-          });
-        }
-        if (format === 'json') {
-          const json = await getFollowageJsonByFollowers({ viewer, channel: streamer, channelToken });
-          res.type('application/json');
-          return res.json(json);
-        } else {
-          const text = await getFollowageTextByPattern({ viewer, channel: streamer, pattern: format, ping, channelToken, lang });
-          res.type('text/plain');
-          return res.send(text);
-        }
-      } catch (e2) {
-        const st = e2?.statusCode || 500;
-        return respondError(req, res, { format, lang, status: st, code: 'followage_error', message: e2?.message || 'error' });
-      }
-    }
-    return respondError(req, res, { format, lang, status, code: 'followage_error', message: err?.message || 'error' });
+    return res.status(status).send('error');
   }
 });
 
