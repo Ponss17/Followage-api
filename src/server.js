@@ -116,6 +116,14 @@ async function extractAuthCredentials(req) {
         refreshToken = payload.refresh_token || null;
       }
     } catch (_) { }
+  } else if (userId && token) {
+    // Attempt to find refresh token if using public params that match our DB
+    try {
+      const rec = await findTokenByUserType(userId, 'channel');
+      if (rec && rec.access_token === token) {
+        refreshToken = rec.refresh_token || null;
+      }
+    } catch (_) { }
   }
 
   return { userId, token, refreshToken };
