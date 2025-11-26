@@ -33,6 +33,8 @@ const copyUrlExampleBtn = document.getElementById('copyUrlExampleBtn');
 const copyUrlGenericBtn = document.getElementById('copyUrlGenericBtn');
 const copySeUrlExampleBtn = document.getElementById('copySeUrlExampleBtn');
 const copySeUrlGenericBtn = document.getElementById('copySeUrlGenericBtn');
+const linkTypeContainer = document.getElementById('linkTypeContainer');
+const linkTypeRadios = document.getElementsByName('linkType');
 
 let isAuthenticated = false;
 let isChannelAuthenticated = false;
@@ -155,6 +157,7 @@ async function refreshChannelAuth() {
         if (channelLoginBtn) channelLoginBtn.style.display = 'none';
         if (channelLogoutBtn) channelLogoutBtn.style.display = '';
         if (channelNotice) channelNotice.style.display = 'none';
+        if (linkTypeContainer) linkTypeContainer.style.display = '';
         try {
           const ch = data.channel || {};
           const chId = ch.channel_id != null ? String(ch.channel_id) : (ch.id != null ? String(ch.id) : '');
@@ -177,6 +180,7 @@ async function refreshChannelAuth() {
         if (channelLoginBtn) channelLoginBtn.style.display = '';
         if (channelLogoutBtn) channelLogoutBtn.style.display = 'none';
         if (channelNotice) channelNotice.style.display = '';
+        if (linkTypeContainer) linkTypeContainer.style.display = 'none';
       }
       updateFormMode();
     }
@@ -244,6 +248,16 @@ form.addEventListener('submit', async (e) => {
   const channelToken = (channelTokenEl?.value || '').trim();
   const authCode = (authCodeEl?.value || '').trim();
 
+  let linkType = 'secure';
+  if (linkTypeRadios) {
+    for (const r of linkTypeRadios) {
+      if (r.checked) {
+        linkType = r.value;
+        break;
+      }
+    }
+  }
+
   const dict = getDict();
 
   if (!viewer) {
@@ -252,7 +266,7 @@ form.addEventListener('submit', async (e) => {
   }
 
   if (!channel) {
-    const urls = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, authCode);
+    const urls = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, authCode, linkType);
     if (urlGenericExampleEl) urlGenericExampleEl.textContent = `$(urlfetch ${urls.genericUrl})`;
     if (urlGenericBlockEl) urlGenericBlockEl.style.display = '';
     if (seUrlGenericExampleEl) seUrlGenericExampleEl.textContent = `$(customapi.${urls.genericUrl})`;
@@ -268,7 +282,7 @@ form.addEventListener('submit', async (e) => {
     let resp;
     let garretUrlForDisplay;
     let genericUrlForDisplay;
-    const urls = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, authCode);
+    const urls = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, authCode, linkType);
     garretUrlForDisplay = urls.displayUrl;
     genericUrlForDisplay = urls.genericUrl;
     const r = await fetch(urls.fetchUrl);
@@ -326,50 +340,63 @@ form.addEventListener('submit', async (e) => {
   }
 });
 
-
-function currentLang() {
-  return (langEl?.value || 'es');
-}
-function buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, authCode) {
+function buildSecureUrls(viewer, channel, lang, format, authCode) {
   const displayBase = window.location.origin;
   const displayUrl = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, displayBase);
   displayUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
   displayUrl.searchParams.set('lang', lang);
-  if (authCode) {
-    displayUrl.searchParams.set('auth', authCode);
-  } else {
-    if (moderatorId) displayUrl.searchParams.set('moderatorId', moderatorId);
-    if (channelToken) displayUrl.searchParams.set('token', channelToken);
-  }
+  if (authCode) displayUrl.searchParams.set('auth', authCode);
+
   const genericBase = 'https://www.losperris.site';
   const genericUrl = new URL(`/twitch/followage/$(channel)/$(user)`, genericBase);
   genericUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
   genericUrl.searchParams.set('ping', 'false');
   genericUrl.searchParams.set('lang', lang);
-  if (authCode) {
-    genericUrl.searchParams.set('auth', authCode);
-  } else {
-    if (moderatorId) genericUrl.searchParams.set('moderatorId', moderatorId);
-    if (channelToken) genericUrl.searchParams.set('token', channelToken);
-  }
+  if (authCode) genericUrl.searchParams.set('auth', authCode);
+
   const fetchUrl = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, window.location.origin);
   fetchUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
   fetchUrl.searchParams.set('ping', 'false');
   fetchUrl.searchParams.set('lang', lang);
-  if (authCode) {
-    fetchUrl.searchParams.set('auth', authCode);
-  } else {
-    if (moderatorId) fetchUrl.searchParams.set('moderatorId', moderatorId);
-    if (channelToken) fetchUrl.searchParams.set('token', channelToken);
-  }
+  if (authCode) fetchUrl.searchParams.set('auth', authCode);
+
   return { displayUrl: displayUrl.toString(), genericUrl: genericUrl.toString(), fetchUrl };
 }
-function labelForState(isHidden) {
-  const lang = currentLang();
-  const showTxt = lang === 'en' ? 'Show' : 'Mostrar';
-  const hideTxt = lang === 'en' ? 'Hide' : 'Ocultar';
-  return isHidden ? showTxt : hideTxt;
+
+function buildPublicUrls(viewer, channel, lang, format, moderatorId, channelToken) {
+  const displayBase = window.location.origin;
+  const displayUrl = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, displayBase);
+  displayUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
+  displayUrl.searchParams.set('lang', lang);
+  if (moderatorId) displayUrl.searchParams.set('moderatorId', moderatorId);
+  if (channelToken) displayUrl.searchParams.set('token', channelToken);
+
+  const genericBase = 'https://www.losperris.site';
+  const genericUrl = new URL(`/twitch/followage/$(channel)/$(user)`, genericBase);
+  genericUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
+  genericUrl.searchParams.set('ping', 'false');
+  genericUrl.searchParams.set('lang', lang);
+  if (moderatorId) genericUrl.searchParams.set('moderatorId', moderatorId);
+  if (channelToken) genericUrl.searchParams.set('token', channelToken);
+
+  const fetchUrl = new URL(`/twitch/followage/${encodeURIComponent(channel)}/${encodeURIComponent(viewer)}`, window.location.origin);
+  fetchUrl.searchParams.set('format', format === 'json' ? 'json' : 'ymdhis');
+  fetchUrl.searchParams.set('ping', 'false');
+  fetchUrl.searchParams.set('lang', lang);
+  if (moderatorId) fetchUrl.searchParams.set('moderatorId', moderatorId);
+  if (channelToken) fetchUrl.searchParams.set('token', channelToken);
+
+  return { displayUrl: displayUrl.toString(), genericUrl: genericUrl.toString(), fetchUrl };
 }
+
+function buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, authCode, linkType = 'secure') {
+  if (linkType === 'secure') {
+    return buildSecureUrls(viewer, channel, lang, format, authCode);
+  } else {
+    return buildPublicUrls(viewer, channel, lang, format, moderatorId, channelToken);
+  }
+}
+
 function updateRevealButtonsLabel() {
   if (toggleModeratorBtn && moderatorIdEl) {
     toggleModeratorBtn.textContent = labelForState(moderatorIdEl.type === 'password');
@@ -411,7 +438,18 @@ if (regenAuthCodeBtn && authCodeEl) {
         const format = (formatEl?.value || 'ymdhis').toString();
         const moderatorId = (moderatorIdEl?.value || '').toString().trim();
         const channelToken = (channelTokenEl?.value || '').toString().trim();
-        const urls = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, code);
+
+        let linkType = 'secure';
+        if (linkTypeRadios) {
+          for (const r of linkTypeRadios) {
+            if (r.checked) {
+              linkType = r.value;
+              break;
+            }
+          }
+        }
+
+        const urls = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, code, linkType);
         if (!channel) {
           if (urlGenericExampleEl) urlGenericExampleEl.textContent = `$(urlfetch ${urls.genericUrl})`;
           if (urlGenericBlockEl) urlGenericBlockEl.style.display = '';
@@ -468,5 +506,16 @@ if (langEl) {
     refreshChannelAuth();
   });
 }
+
+if (linkTypeRadios) {
+  for (const r of linkTypeRadios) {
+    r.addEventListener('change', () => {
+      if (form.checkValidity() && channelEl.value) {
+        form.dispatchEvent(new Event('submit'));
+      }
+    });
+  }
+}
+
 updateUrlLabels();
 updateRevealButtonsLabel();

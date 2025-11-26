@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/styles.css" />
+  <link rel="stylesheet" href="/css/styles.css" />
   <link rel="icon" href="https://www.losperris.site/imgs/LosPerris-gamer.ico" type="image/x-icon" sizes="any">
   <meta name="theme-color" content="#1E1E2F">
   <link rel="apple-touch-icon" href="https://www.losperris.site/imgs/LosPerris-gamer.ico">
@@ -98,6 +98,21 @@
             </select>
           </label>
         </div>
+        <div class="grid" id="linkTypeContainer" style="display:none;">
+          <label>
+            Tipo de Enlace
+            <div class="radio-group">
+              <label>
+                <input type="radio" name="linkType" value="secure" checked> Seguro (Base de datos)
+              </label>
+              <label>
+                <input type="radio" name="linkType" value="public"> Token Público (Directo)
+              </label>
+            </div>
+            <small class="hint">"Seguro" usa un código encriptado. "Token Público" expone el token en la URL (útil si la
+              DB falla).</small>
+          </label>
+        </div>
 
         <div class="grid">
           <label>
@@ -110,7 +125,8 @@
               </div>
             </div>
             <small class="hint">Usa este código en lugar de tu ID y Token para mayor seguridad.</small>
-            <small class="hint">Regenerar invalida el código anterior. Vuelve a presionar “Generar” para actualizar las URLs.</small>
+            <small class="hint">Regenerar invalida el código anterior. Vuelve a presionar “Generar” para actualizar las
+              URLs.</small>
           </label>
         </div>
 
@@ -139,19 +155,23 @@
       <div id="result" class="result"></div>
       <div id="url-block" class="result" style="display:none">
         <small id="urlPersonalLabel">URL personalizada (solo follow del usuario):</small>
-        <div class="input-row"><code id="urlExample"></code><button type="button" class="reveal-btn" id="copyUrlExampleBtn">Copiar</button></div>
+        <div class="input-row"><code id="urlExample"></code><button type="button" class="reveal-btn"
+            id="copyUrlExampleBtn">Copiar</button></div>
       </div>
       <div id="url-generic-block" class="result" style="display:none">
         <small id="urlGenericLabel">URL genérica (Nightbot; para cualquier usuario):</small>
-        <div class="input-row"><code id="urlGenericExample"></code><button type="button" class="reveal-btn" id="copyUrlGenericBtn">Copiar</button></div>
+        <div class="input-row"><code id="urlGenericExample"></code><button type="button" class="reveal-btn"
+            id="copyUrlGenericBtn">Copiar</button></div>
       </div>
       <div id="se-url-block" class="result" style="display:none">
         <small>Comando StreamElements (personalizado):</small>
-        <div class="input-row"><code id="seUrlExample"></code><button type="button" class="reveal-btn" id="copySeUrlExampleBtn">Copiar</button></div>
+        <div class="input-row"><code id="seUrlExample"></code><button type="button" class="reveal-btn"
+            id="copySeUrlExampleBtn">Copiar</button></div>
       </div>
       <div id="se-url-generic-block" class="result" style="display:none">
         <small>Comando StreamElements (genérico):</small>
-        <div class="input-row"><code id="seUrlGenericExample"></code><button type="button" class="reveal-btn" id="copySeUrlGenericBtn">Copiar</button></div>
+        <div class="input-row"><code id="seUrlGenericExample"></code><button type="button" class="reveal-btn"
+            id="copySeUrlGenericBtn">Copiar</button></div>
       </div>
     </section>
 
@@ -213,15 +233,211 @@
   </main>
 
   <footer class="footer">
-    <div class="container">
-      <p>© LosPerris.site - Followage API | <a href="/twitch/clips/" style="color: #a78bfa;">Clips API</a></p>
+    <img class="site-logo tilt" src="https://www.losperris.site/imgs/LosPerris-gamer.ico" alt="LosPerris">
+    <div class="hero-badge">LosPerris - Ponsscito</div>
+    <h1 class="gradient-text">LosPerrisFollowage API</h1>
+    <p>Consulta cuánto tiempo <em>un usuario</em> lleva siguiendo tu <em>canal</em> en Twitch.</p>
+    <div class="cta">
+      <a class="btn" href="#demo">Probar ahora</a>
+      <a class="btn btn-secondary" href="#docs">Ver pasos</a>
     </div>
-  </footer>
+    <div class="auth-box" id="authBox">
+      <span id="authStatus">No autenticado</span>
+      <button class="btn" id="loginBtn">Iniciar sesión con Twitch</button>
+      <button class="btn btn-secondary" id="logoutBtn" style="display:none">Cerrar sesión</button>
+    </div>
+    <div class="auth-box" id="channelAuthBox">
+      <span id="channelAuthStatus">Canal no autenticado</span>
+      <button class="btn" id="channelLoginBtn">Iniciar sesión Canal/Moderador</button>
+      <button class="btn btn-secondary" id="channelLogoutBtn" style="display:none">Cerrar sesión Canal</button>
+    </div>
+    </div>
+    </header>
 
-  <script src="/app.js"></script>
-  <script src="/effects.js"></script>
+    <main class="container">
+      <section id="demo" class="card">
+        <h2>Demo rápida</h2>
+        <p id="demoNotice" class="notice" style="display:none">
+          Modo usuario: inicia sesión con Twitch para usar tu cuenta como <code>Usuario</code>.
+        </p>
+        <p id="channelNotice" class="notice" style="display:none">
+          Si un canal/moderador inicia sesión aquí, su canal queda disponible públicamente en este servidor: cualquiera
+          podrá consultar su followage usando el endpoint estilo Garret.
+        </p>
+        <form id="followage-form">
+          <div class="grid">
+            <label>
+              Usuario $(user)/$(touser)
+              <input type="text" id="viewer" placeholder="Ingresa el usuario o se completará tras login" required />
+              <small class="hint">Si el canal/moderador está autenticado, puedes consultar cualquier usuario sin login
+                de
+                usuario.</small>
+            </label>
+            <label>
+              Canal $(channel)
+              <input type="text" id="channel" placeholder="p.ej. somechannel" required />
+            </label>
+          </div>
+          <div class="grid">
+            <label>
+              Idioma
+              <select id="lang">
+                <option value="es" selected>Español</option>
+                <option value="en">English</option>
+              </select>
+            </label>
+            <label>
+              Formato
+              <select id="format">
+                <option value="text" selected>Texto</option>
+                <option value="json">JSON</option>
+              </select>
+            </label>
+          </div>
+          <div class="grid" id="linkTypeContainer" style="display:none;">
+            <label>
+              Tipo de Enlace
+              <div class="radio-group">
+                <label>
+                  <input type="radio" name="linkType" value="secure" checked> Seguro (Base de datos)
+                </label>
+                <label>
+                  <input type="radio" name="linkType" value="public"> Token Público (Directo)
+                </label>
+              </div>
+              <small class="hint">"Seguro" usa un código encriptado. "Token Público" expone el token en la URL (útil si
+                la
+                DB falla).</small>
+            </label>
+          </div>
+
+          <div class="grid">
+            <label>
+              Código de Autenticación (Seguro)
+              <div class="input-row">
+                <input type="password" id="authCode" placeholder="Se genera al iniciar sesión" readonly />
+                <div class="input-actions">
+                  <button type="button" class="reveal-btn" id="toggleAuthCode">Mostrar</button>
+                  <button type="button" class="reveal-btn" id="regenAuthCodeBtn">Regenerar</button>
+                </div>
+              </div>
+              <small class="hint">Usa este código en lugar de tu ID y Token para mayor seguridad.</small>
+              <small class="hint">Regenerar invalida el código anterior. Vuelve a presionar “Generar” para actualizar
+                las
+                URLs.</small>
+            </label>
+          </div>
+
+          <div class="grid">
+            <label>
+              Moderator ID (Legacy)
+              <div class="input-row">
+                <input type="password" id="moderatorId" placeholder="ID de moderador (numérico)" />
+                <button type="button" class="reveal-btn" id="toggleModeratorId">Mostrar</button>
+              </div>
+              <small class="hint">Se completa automáticamente tras iniciar sesión Canal/Moderador; opcional.</small>
+            </label>
+            <label>
+              Token del canal/moderador (Legacy)
+              <div class="input-row">
+                <input type="password" id="channelToken" placeholder="Pegue aquí el OAuth del mod" />
+                <button type="button" class="reveal-btn" id="toggleChannelToken">Mostrar</button>
+              </div>
+              <small class="hint">Se completa automáticamente tras iniciar sesión Canal/Moderador; opcional. Usa scope
+                <code>moderator:read:followers</code>.</small>
+            </label>
+          </div>
+
+          <button class="btn" type="submit">Generar</button>
+        </form>
+        <div id="result" class="result"></div>
+        <div id="url-block" class="result" style="display:none">
+          <small id="urlPersonalLabel">URL personalizada (solo follow del usuario):</small>
+          <div class="input-row"><code id="urlExample"></code><button type="button" class="reveal-btn"
+              id="copyUrlExampleBtn">Copiar</button></div>
+        </div>
+        <div id="url-generic-block" class="result" style="display:none">
+          <small id="urlGenericLabel">URL genérica (Nightbot; para cualquier usuario):</small>
+          <div class="input-row"><code id="urlGenericExample"></code><button type="button" class="reveal-btn"
+              id="copyUrlGenericBtn">Copiar</button></div>
+        </div>
+        <div id="se-url-block" class="result" style="display:none">
+          <small>Comando StreamElements (personalizado):</small>
+          <div class="input-row"><code id="seUrlExample"></code><button type="button" class="reveal-btn"
+              id="copySeUrlExampleBtn">Copiar</button></div>
+        </div>
+        <div id="se-url-generic-block" class="result" style="display:none">
+          <small>Comando StreamElements (genérico):</small>
+          <div class="input-row"><code id="seUrlGenericExample"></code><button type="button" class="reveal-btn"
+              id="copySeUrlGenericBtn">Copiar</button></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2>Características</h2>
+        <ul>
+          <li><span class="icon">✓</span> Login Canal/Moderador cachea <code>channel_id</code> y <code>token</code>;
+            autocompleta Moderator ID y Token.</li>
+          <li><span class="icon">✓</span> Genera y muestra URL personalizada y genérica (Nightbot) envueltas como
+            <code>$(urlfetch ...)</code>.
+          </li>
+          <li><span class="icon">✓</span> ES/EN: etiquetas de URL y respuestas en el idioma seleccionado.</li>
+          <li><span class="icon">✓</span> Endpoint público: <code>/twitch/followage/$(channel)/$(touser)</code> con
+            valores por defecto útiles.</li>
+          <li><span class="icon">✓</span> Endpoint privado: <code>/api/followage</code> usa la sesión del usuario
+            autenticado.</li>
+        </ul>
+      </section>
+
+      <section id="docs" class="card">
+        <h2>Pasos de uso</h2>
+        <ol class="step-list">
+          <li>Iniciar sesión de Usuario con Twitch (opcional si el canal/mod está autenticado).</li>
+          <li>Iniciar sesión de Canal/Moderador para habilitar consultas públicas y autocompletar Moderator ID y Token.
+          </li>
+          <li>Agregar Usuario (touser) y Canal (channel) en el formulario.</li>
+          <li>Elegir Idioma (ES/EN) y Formato (Texto/JSON).</li>
+          <li>Presionar “Generar” para ver el resultado y las URLs copiable.</li>
+          <li>Copiar el comando Nightbot desde “URL genérica (Nightbot)” y pegarlo en tu bot.</li>
+          <li>(Opcional) Verificar la salud del servicio en <code>/health</code>.</li>
+        </ol>
+
+        <hr />
+        <h3>Comandos</h3>
+        <p>Patrón público compatible con bots (Nightbot, etc.):</p>
+        <pre><code>GET /twitch/followage/{StreamerUsername}/{ViewerUsername}?format=ymdhis|json&ping=true|false&lang=es|en[&moderatorId={ModeratorId}][&token={OAuthMod}]</code></pre>
+        <ul>
+          <li><code>format</code>: <code>ymdhis</code> por defecto; <code>json</code> alternativo.</li>
+          <li><code>ping</code>: <code>false</code> por defecto; añade menciones si es <code>true</code>.</li>
+          <li><code>lang</code>: <code>es</code> por defecto en texto; <code>en</code> opcional.</li>
+          <li><code>moderatorId</code> y <code>token</code> (opcionales): si el canal/moderador está autenticado aquí,
+            normalmente no se requieren.</li>
+        </ul>
+        <p>Ejemplos Nightbot (listos para copiar):</p>
+        <pre><code>$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&ping=false&lang=es&auth=(tu_codigo))</code></pre>
+        <pre><code>$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=json&lang=en&ping=true&auth=(tu_codigo))</code></pre>
+        <p class="notice">Aviso: si incluyes <code>token</code> en la URL quedará visible en el comando. Usa un token
+          dedicado/rotatorio y revócalo si es necesario.</p>
+      </section>
+
+      <section class="card muted">
+        <h2>Notas</h2>
+        <ul>
+          <li>Token de aplicación de Twitch cacheado y renovado automáticamente.</li>
+          <li>Duraciones aproximadas para meses/días (30 días/mes, 365 días/año).</li>
+          <li>Si necesitas precisión de calendario exacta, se puede ajustar.</li>
+        </ul>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <p>© LosPerris.site - Followage API | <a href="/twitch/clips/" style="color: #a78bfa;">Clips API</a></p>
+      </div>
+    </footer>
+
+    <script src="/twitch/followage/app.js"></script>
+    <script src="/js/effects.js"></script>
 </body>
 
 </html>
-
-
