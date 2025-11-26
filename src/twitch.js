@@ -38,7 +38,7 @@ async function getAppAccessToken() {
   return cachedToken;
 }
 
-async function twitchFetch(path, params = {}, tokenOverride = null) {
+async function twitchFetch(path, params = {}, tokenOverride = null, options = {}) {
   const token = tokenOverride || await getAppAccessToken();
   const clientId = process.env.TWITCH_CLIENT_ID;
   const url = new URL(`https://api.twitch.tv/helix/${path}`);
@@ -51,18 +51,23 @@ async function twitchFetch(path, params = {}, tokenOverride = null) {
   }
 
   let attempts = 0;
-  while (attempts < 3) {
+  const maxAttempts = 2;
+  while (attempts < maxAttempts) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), options.timeoutMs || 2500);
     try {
       const resp = await fetch(url, {
         headers: {
           'Client-Id': clientId,
           'Authorization': `Bearer ${token}`
-        }
+        },
+        signal: controller.signal
       });
+      clearTimeout(timeout);
 
       if (resp.status === 429 || resp.status >= 500) {
         attempts++;
-        await new Promise(r => setTimeout(r, 1000 * attempts));
+        await new Promise(r => setTimeout(r, 500 * attempts));
         continue;
       }
 
@@ -74,9 +79,10 @@ async function twitchFetch(path, params = {}, tokenOverride = null) {
       }
       return await resp.json();
     } catch (err) {
-      if (attempts >= 2) throw err;
+      clearTimeout(timeout);
+      if (attempts >= (maxAttempts - 1)) throw err;
       attempts++;
-      await new Promise(r => setTimeout(r, 1000 * attempts));
+      await new Promise(r => setTimeout(r, 500 * attempts));
     }
   }
 }
@@ -120,18 +126,9 @@ export async function getFollowRecord(fromId, toId, userToken) {
     err.statusCode = 401;
     throw err;
   }
-  let cursor = null;
-  let safety = 0;
-  while (safety++ < 100) {
-    const params = { user_id: fromId, first: '100' };
-    if (cursor) params.after = cursor;
-    const data = await twitchFetch('channels/followed', params, userToken);
-    const match = (data?.data || []).find((item) => item?.broadcaster_id === toId);
-    if (match) return match;
-    cursor = data?.pagination?.cursor || null;
-    if (!cursor) break;
-  }
-  return null;
+  const data = await twitchFetch('users/follows', { from_id: fromId, to_id: toId, first: '1' }, userToken, { timeoutMs: 2500 });
+  const item = (data?.data || [])[0];
+  return item || null;
 }
 
 export async function getFollowerRecordByChannelToken(broadcasterId, userId, channelToken) {
