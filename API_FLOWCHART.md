@@ -1,4 +1,4 @@
-# 🗺️ Mapa Visual - Followage API
+# 🗺️ Mapa Visual - LosPerris Followage API
 
 ## 🎯 Vista General del Sistema
 
@@ -151,26 +151,26 @@ graph TB
         direction TB
         
         subgraph "👤 User Auth"
-            UA1[🎯 Scopes]
-            UA2[user:read:email<br/>user:read:follows]
-            UA3[🍪 Cookie: auth]
-            UA4[📋 Uso: Followage propio]
+            UA1["🎯 Scopes"]
+            UA2["user:read:email + user:read:follows"]
+            UA3["🍪 Cookie: auth"]
+            UA4["📋 Uso: Followage propio"]
             UA1 --> UA2 --> UA3 --> UA4
         end
         
         subgraph "📺 Channel Auth"
-            CA1[🎯 Scopes]
-            CA2[moderator:read:followers]
-            CA3[🍪 Cookie: channel_auth]
-            CA4[📋 Uso: Followage de canal]
+            CA1["🎯 Scopes"]
+            CA2["moderator:read:followers"]
+            CA3["🍪 Cookie: channel_auth"]
+            CA4["📋 Uso: Followage de canal"]
             CA1 --> CA2 --> CA3 --> CA4
         end
         
         subgraph "🎬 Clips Auth"
-            CL1[🎯 Scopes]
-            CL2[clips:edit]
-            CL3[🍪 Cookie: clips_auth]
-            CL4[📋 Uso: Crear clips]
+            CL1["🎯 Scopes"]
+            CL2["clips:edit"]
+            CL3["🍪 Cookie: clips_auth"]
+            CL4["📋 Uso: Crear clips"]
             CL1 --> CL2 --> CL3 --> CL4
         end
     end
@@ -198,30 +198,30 @@ graph TB
     ROOT[🏠 Followage API]
     
     subgraph "🔐 Autenticación"
-        AUTH_LOGIN[/auth/login<br/>🚪 Login Usuario]
-        AUTH_CHANNEL[/auth/channel/login<br/>📺 Login Canal]
-        AUTH_CLIPS[/auth/clips/login<br/>🎬 Login Clips]
-        AUTH_CB[/auth/callback<br/>↩️ Callbacks]
-        AUTH_LOGOUT[/auth/logout<br/>🚪 Logout]
+        AUTH_LOGIN["🚪 /auth/login"]
+        AUTH_CHANNEL["📺 /auth/channel/login"]
+        AUTH_CLIPS["🎬 /auth/clips/login"]
+        AUTH_CB["↩️ /auth/callback"]
+        AUTH_LOGOUT["🚪 /auth/logout"]
     end
     
     subgraph "👤 Info de Usuario"
-        ME[/me<br/>👤 Info Usuario]
-        CHANNEL_ME[/channel/me<br/>📺 Info Canal]
-        CLIPS_ME[/clips/me<br/>🎬 Info Clips]
+        ME["👤 /me"]
+        CHANNEL_ME["📺 /channel/me"]
+        CLIPS_ME["🎬 /clips/me"]
     end
     
     subgraph "📊 Funcionalidades"
-        FOLLOWAGE1[/api/followage<br/>📈 Followage Cookie]
-        FOLLOWAGE2[/twitch/followage/:s/:v<br/>📈 Followage Token]
-        CLIPS[/api/clips/create<br/>🎬 Crear Clip]
-        CHATTER[/twitch/chatter/:s<br/>🎲 Chatter Random]
+        FOLLOWAGE1["📈 /api/followage"]
+        FOLLOWAGE2["📈 /twitch/followage/:s/:v"]
+        CLIPS["🎬 /api/clips/create"]
+        CHATTER["🎲 /twitch/chatter/:s"]
     end
     
     subgraph "🔧 Utilidades"
-        HEALTH[/health<br/>💚 Health Check]
-        ERROR[/error<br/>❌ Página Error]
-        INDEX[/<br/>🏠 Home]
+        HEALTH["💚 /health"]
+        ERROR["❌ /error"]
+        INDEX["🏠 /"]
     end
     
     ROOT --> AUTH_LOGIN
@@ -318,10 +318,10 @@ graph TB
     START([🎬 Inicio]) --> AUTH{¿Autenticado?}
     
     AUTH -->|❌ No| ERROR_401[❌ 401 Auth Required]
-    AUTH -->|✅ Sí| RATE_LIMIT{Rate Limit<br/>3/5min}
+    AUTH -->|✅ Sí| RATE_LIMIT{"Rate Limit: 3/5min"}
     
     RATE_LIMIT -->|❌ Excedido| ERROR_429[⏱️ 429 Cooldown]
-    RATE_LIMIT -->|✅ OK| CHECK_CHANNEL{¿Channel<br/>Param?}
+    RATE_LIMIT -->|✅ OK| CHECK_CHANNEL{"¿Channel Param?"}
     
     CHECK_CHANNEL -->|✅ Sí| GET_CHANNEL[📡 Get Channel Info]
     CHECK_CHANNEL -->|❌ No| USE_USER[👤 Usar User ID]
@@ -332,7 +332,7 @@ graph TB
     CREATE_CLIP --> CHECK_RESULT{Resultado}
     
     CHECK_RESULT -->|❌ Offline| ERROR_OFFLINE[❌ Canal Offline]
-    CHECK_RESULT -->|❌ 401| TRY_REFRESH{¿Refresh<br/>Token?}
+    CHECK_RESULT -->|❌ 401| TRY_REFRESH{"¿Refresh Token?"}
     CHECK_RESULT -->|✅ OK| SUCCESS[✅ Clip Creado]
     
     TRY_REFRESH -->|✅ Sí| REFRESH[🔄 Refresh Token]
@@ -380,8 +380,8 @@ graph TB
     end
     
     subgraph "💭 In-Memory"
-        CACHE[NodeCache<br/>TTL: 5min]
-        RATE[Rate Limiter<br/>Map]
+        CACHE["NodeCache - TTL: 5min"]
+        RATE["Rate Limiter Map"]
         FALLBACK[Fallback Storage]
         
         CACHE --> CACHE_USER[User Data]
@@ -499,7 +499,7 @@ graph TB
     
     RATELIMIT --> BACKOFF[⏳ Backoff]
     SERVERERR --> BACKOFF
-    BACKOFF --> RETRY_COUNT{Intentos < 3}
+    BACKOFF --> RETRY_COUNT{"Intentos < 3"}
     RETRY_COUNT -->|✅ Sí| RETRY
     RETRY_COUNT -->|❌ No| RETURN_ERROR[📤 Error]
     
