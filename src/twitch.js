@@ -2,6 +2,7 @@ import NodeCache from 'node-cache';
 import { formatFollowageText, diffFromNow, formatByPattern } from './utils.js';
 
 const cache = new NodeCache({ stdTTL: 300 }); // 5 minutes cache
+const FOLLOW_CACHE_TTL = 60;
 
 let cachedToken = null;
 let cachedTokenExp = 0;
@@ -110,7 +111,7 @@ async function getUsersByLogins(viewerLogin, channelLogin) {
   if (!cCached) toFetch.push(channelLogin);
   let items = [];
   if (toFetch.length) {
-    const data = await twitchFetch('users', { login: toFetch });
+    const data = await twitchFetch('users', { login: toFetch }, null, { timeoutMs: 2000 });
     items = data?.data || [];
   }
   let viewerUser = vCached || items.find(u => String(u.login).toLowerCase() === String(viewerLogin).toLowerCase()) || null;
@@ -137,7 +138,7 @@ export async function getFollowerRecordByChannelToken(broadcasterId, userId, cha
     err.statusCode = 401;
     throw err;
   }
-  const data = await twitchFetch('channels/followers', { broadcaster_id: broadcasterId, user_id: userId, first: '1' }, channelToken);
+  const data = await twitchFetch('channels/followers', { broadcaster_id: broadcasterId, user_id: userId, first: '1' }, channelToken, { timeoutMs: 2000 });
   const item = (data?.data || [])[0];
   return item || null;
 }
@@ -158,7 +159,7 @@ export async function getFollowageJsonByFollowers({ viewer, channel, channelToke
   let follow = cache.get(fKey);
   if (follow === undefined) {
     follow = await getFollowerRecordByChannelToken(channelUser.id, viewerUser.id, channelToken);
-    cache.set(fKey, follow || null, 30);
+    cache.set(fKey, follow || null, FOLLOW_CACHE_TTL);
   }
   if (!follow) {
     return {
@@ -207,7 +208,7 @@ export async function getFollowageJson({ viewer, channel, userToken }) {
   let follow = cache.get(fKey);
   if (follow === undefined) {
     follow = await getFollowRecord(viewerUser.id, channelUser.id, userToken);
-    cache.set(fKey, follow || null, 30);
+    cache.set(fKey, follow || null, FOLLOW_CACHE_TTL);
   }
   if (!follow) {
     return {
@@ -241,29 +242,49 @@ export async function createClip({ broadcasterId, userToken }) {
   const clientId = process.env.TWITCH_CLIENT_ID;
   const url = new URL('https://api.twitch.tv/helix/clips');
   url.searchParams.set('broadcaster_id', broadcasterId);
-  const resp = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Client-Id': clientId,
-      'Authorization': `Bearer ${userToken}`
+  let attempts = 0;
+  const maxAttempts = 2;
+  while (attempts < maxAttempts) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2000);
+    try {
+      const resp = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Client-Id': clientId,
+          'Authorization': `Bearer ${userToken}`
+        },
+        signal: controller.signal
+      });
+      clearTimeout(timeout);
+      if (resp.status === 429 || resp.status >= 500) {
+        attempts++;
+        await new Promise(r => setTimeout(r, 500 * attempts));
+        continue;
+      }
+      if (!resp.ok) {
+        const body = await resp.text();
+        const err = new Error(`Error creando clip: ${resp.status} ${body}`);
+        err.statusCode = resp.status;
+        throw err;
+      }
+      const data = await resp.json();
+      const clip = data?.data?.[0];
+      if (!clip) {
+        const err = new Error('No se pudo crear el clip');
+        err.statusCode = 500;
+        throw err;
+      }
+      return {
+        id: clip.id,
+        edit_url: clip.edit_url,
+        url: `https://clips.twitch.tv/${clip.id}`
+      };
+    } catch (err) {
+      clearTimeout(timeout);
+      if (attempts >= (maxAttempts - 1)) throw err;
+      attempts++;
+      await new Promise(r => setTimeout(r, 500 * attempts));
     }
-  });
-  if (!resp.ok) {
-    const body = await resp.text();
-    const err = new Error(`Error creando clip: ${resp.status} ${body}`);
-    err.statusCode = resp.status;
-    throw err;
   }
-  const data = await resp.json();
-  const clip = data?.data?.[0];
-  if (!clip) {
-    const err = new Error('No se pudo crear el clip');
-    err.statusCode = 500;
-    throw err;
-  }
-  return {
-    id: clip.id,
-    edit_url: clip.edit_url,
-    url: `https://clips.twitch.tv/${clip.id}`
-  };
 }
