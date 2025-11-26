@@ -43,7 +43,11 @@ async function twitchFetch(path, params = {}, tokenOverride = null) {
   const clientId = process.env.TWITCH_CLIENT_ID;
   const url = new URL(`https://api.twitch.tv/helix/${path}`);
   for (const [k, v] of Object.entries(params)) {
-    url.searchParams.set(k, v);
+    if (Array.isArray(v)) {
+      for (const item of v) url.searchParams.append(k, item);
+    } else {
+      url.searchParams.set(k, v);
+    }
   }
 
   let attempts = 0;
@@ -89,6 +93,27 @@ export async function getUserByLogin(login) {
   return user;
 }
 
+async function getUsersByLogins(viewerLogin, channelLogin) {
+  const vKey = `user_${viewerLogin}`;
+  const cKey = `user_${channelLogin}`;
+  const vCached = cache.get(vKey);
+  const cCached = cache.get(cKey);
+  if (vCached && cCached) return { viewerUser: vCached, channelUser: cCached };
+  const toFetch = [];
+  if (!vCached) toFetch.push(viewerLogin);
+  if (!cCached) toFetch.push(channelLogin);
+  let items = [];
+  if (toFetch.length) {
+    const data = await twitchFetch('users', { login: toFetch });
+    items = data?.data || [];
+  }
+  let viewerUser = vCached || items.find(u => String(u.login).toLowerCase() === String(viewerLogin).toLowerCase()) || null;
+  let channelUser = cCached || items.find(u => String(u.login).toLowerCase() === String(channelLogin).toLowerCase()) || null;
+  if (viewerUser) cache.set(vKey, viewerUser);
+  if (channelUser) cache.set(cKey, channelUser);
+  return { viewerUser, channelUser };
+}
+
 export async function getFollowRecord(fromId, toId, userToken) {
   if (!userToken) {
     const err = new Error('Se requiere autenticación del usuario para consultar followage');
@@ -121,10 +146,7 @@ export async function getFollowerRecordByChannelToken(broadcasterId, userId, cha
 }
 
 export async function getFollowageJsonByFollowers({ viewer, channel, channelToken }) {
-  const [viewerUser, channelUser] = await Promise.all([
-    getUserByLogin(viewer),
-    getUserByLogin(channel)
-  ]);
+  const { viewerUser, channelUser } = await getUsersByLogins(viewer, channel);
   if (!viewerUser) {
     const err = new Error(`No se encontró el usuario viewer "${viewer}"`);
     err.statusCode = 404;
@@ -135,7 +157,12 @@ export async function getFollowageJsonByFollowers({ viewer, channel, channelToke
     err.statusCode = 404;
     throw err;
   }
-  const follow = await getFollowerRecordByChannelToken(channelUser.id, viewerUser.id, channelToken);
+  const fKey = `f_${channelUser.id}_${viewerUser.id}`;
+  let follow = cache.get(fKey);
+  if (follow === undefined) {
+    follow = await getFollowerRecordByChannelToken(channelUser.id, viewerUser.id, channelToken);
+    cache.set(fKey, follow || null, 30);
+  }
   if (!follow) {
     return {
       viewer: viewerUser.login,
@@ -168,10 +195,7 @@ export async function getFollowageTextByPattern({ viewer, channel, pattern = 'ym
 }
 
 export async function getFollowageJson({ viewer, channel, userToken }) {
-  const [viewerUser, channelUser] = await Promise.all([
-    getUserByLogin(viewer),
-    getUserByLogin(channel)
-  ]);
+  const { viewerUser, channelUser } = await getUsersByLogins(viewer, channel);
   if (!viewerUser) {
     const err = new Error(`No se encontró el usuario viewer "${viewer}"`);
     err.statusCode = 404;
@@ -182,7 +206,12 @@ export async function getFollowageJson({ viewer, channel, userToken }) {
     err.statusCode = 404;
     throw err;
   }
-  const follow = await getFollowRecord(viewerUser.id, channelUser.id, userToken);
+  const fKey = `fu_${viewerUser.id}_${channelUser.id}`;
+  let follow = cache.get(fKey);
+  if (follow === undefined) {
+    follow = await getFollowRecord(viewerUser.id, channelUser.id, userToken);
+    cache.set(fKey, follow || null, 30);
+  }
   if (!follow) {
     return {
       viewer: viewerUser.login,
