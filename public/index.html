@@ -66,7 +66,8 @@
         Modo usuario: inicia sesión con Twitch para usar tu cuenta como <code>Usuario</code>.
       </p>
       <p id="channelNotice" class="notice" style="display:none">
-        Si un canal/moderador inicia sesión aquí, su canal queda disponible públicamente en este servidor: cualquiera
+        Si un canal/moderador inicia sesión aquí, su canal queda disponible públicamente en este servidor:
+        cualquiera
         podrá consultar su followage usando el endpoint estilo Garret.
       </p>
       <form id="followage-form">
@@ -74,7 +75,8 @@
           <label>
             Usuario $(user)/$(touser)
             <input type="text" id="viewer" placeholder="Ingresa el usuario o se completará tras login" required />
-            <small class="hint">Si el canal/moderador está autenticado, puedes consultar cualquier usuario sin login de
+            <small class="hint">Si el canal/moderador está autenticado, puedes consultar cualquier usuario sin
+              login de
               usuario.</small>
           </label>
           <label>
@@ -109,7 +111,8 @@
                 <input type="radio" name="linkType" value="public"> Token Público (Directo)
               </label>
             </div>
-            <small class="hint">"Seguro" usa un código encriptado. "Token Público" expone el token en la URL (útil si la
+            <small class="hint">"Seguro" usa un código encriptado. "Token Público" expone el token en la URL (útil
+              si la
               DB falla).</small>
           </label>
         </div>
@@ -125,7 +128,8 @@
               </div>
             </div>
             <small class="hint">Usa este código en lugar de tu ID y Token para mayor seguridad.</small>
-            <small class="hint">Regenerar invalida el código anterior. Vuelve a presionar “Generar” para actualizar las
+            <small class="hint">Regenerar invalida el código anterior. Vuelve a presionar “Generar” para
+              actualizar las
               URLs.</small>
           </label>
         </div>
@@ -145,7 +149,8 @@
               <input type="password" id="channelToken" placeholder="Pegue aquí el OAuth del mod" />
               <button type="button" class="reveal-btn" id="toggleChannelToken">Mostrar</button>
             </div>
-            <small class="hint">Se completa automáticamente tras iniciar sesión Canal/Moderador; opcional. Usa scope
+            <small class="hint">Se completa automáticamente tras iniciar sesión Canal/Moderador; opcional. Usa
+              scope
               <code>moderator:read:followers</code>.</small>
           </label>
         </div>
@@ -195,7 +200,8 @@
       <h2>Pasos de uso</h2>
       <ol class="step-list">
         <li>Iniciar sesión de Usuario con Twitch (opcional si el canal/mod está autenticado).</li>
-        <li>Iniciar sesión de Canal/Moderador para habilitar consultas públicas y autocompletar Moderator ID y Token.
+        <li>Iniciar sesión de Canal/Moderador para habilitar consultas públicas y autocompletar Moderator ID y
+          Token.
         </li>
         <li>Agregar Usuario (touser) y Canal (channel) en el formulario.</li>
         <li>Elegir Idioma (ES/EN) y Formato (Texto/JSON).</li>
@@ -212,13 +218,17 @@
         <li><code>format</code>: <code>ymdhis</code> por defecto; <code>json</code> alternativo.</li>
         <li><code>ping</code>: <code>false</code> por defecto; añade menciones si es <code>true</code>.</li>
         <li><code>lang</code>: <code>es</code> por defecto en texto; <code>en</code> opcional.</li>
-        <li><code>moderatorId</code> y <code>token</code> (opcionales): si el canal/moderador está autenticado aquí,
-          normalmente no se requieren.</li>
       </ul>
-      <p>Ejemplos Nightbot (listos para copiar):</p>
+
+      <h4>Método Seguro (Recomendado)</h4>
+      <p>Usa el código generado al iniciar sesión. No expone tu token.</p>
       <pre><code>$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&ping=false&lang=es&auth=(tu_codigo))</code></pre>
-      <pre><code>$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=json&lang=en&ping=true&auth=(tu_codigo))</code></pre>
-      <p class="notice">Aviso: si incluyes <code>token</code> en la URL quedará visible en el comando. Usa un token
+
+      <h4>Método Token Público (Alternativo)</h4>
+      <p>Usa tu ID y Token directamente en la URL. Útil si la base de datos falla, pero menos seguro.</p>
+      <pre><code>$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=ymdhis&lang=es&moderatorId=(tu_id)&token=(tu_token))</code></pre>
+      <p class="notice">Aviso: si incluyes <code>token</code> en la URL quedará visible en el comando. Usa un
+        token
         dedicado/rotatorio y revócalo si es necesario.</p>
     </section>
 
