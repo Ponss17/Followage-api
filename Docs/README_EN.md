@@ -4,6 +4,10 @@ Free Twitch API with two useful tools for streamers.
 
 🌐 **Website**: [www.losperris.site](https://www.losperris.site)
 
+## 📚 Technical Documentation
+
+🗺️ **[API Visual Map](./API_FLOWCHART.md)** - Complete flow diagram with architecture, endpoints, authentication and more.
+
 ---
 
 ## 🔍 Followage - Check Follow Time
