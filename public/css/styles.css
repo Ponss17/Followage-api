@@ -17,17 +17,17 @@
   box-sizing: border-box;
 }
 
-html {
+html,
+body {
   height: 100%;
 }
 
 body {
   margin: 0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(to bottom, var(--bg), #050505);
+  background: var(--bg);
   color: var(--text);
   line-height: 1.6;
-  min-height: 100vh;
 }
 
 .container {
