@@ -1,69 +1,82 @@
 # LosPerris Twitch API
 
-API gratuita para Twitch con dos herramientas útiles para streamers.
+API gratuita para Twitch con herramientas útiles para streamers y moderadores.
 
 🌐 **Sitio web**: [www.losperris.site](https://www.losperris.site)
 
 ## 📚 Documentación Técnica
 
-🗺️ **[Mapa Visual de la API](./Docs/API_FLOWCHART.md)** - Diagrama completo de flujo con arquitectura, endpoints, autenticación y más.
-
-📖 **[Documentación en Inglés](./Docs/README_EN.md)** - English documentation.
+- 🗺️ **[Mapa Visual de la API](./Docs/API_FLOWCHART.md)**: Diagrama completo de arquitectura y flujo.
+- 📖 **[English Documentation](./Docs/README_EN.md)**: Versión en inglés de este documento.
 
 ---
 
-## 🔍 Followage - Consulta tiempo de seguimiento
+## 📂 Estructura del Proyecto
 
-Verifica cuánto tiempo lleva un usuario siguiendo tu canal.
+El servidor ha sido refactorizado para ser modular, escalable y fácil de mantener:
 
-### Cómo usarlo en Nightbot
+- **`src/server.js`**: Punto de entrada principal y configuración de Express.
+- **`src/routes/`**: Definición de todos los endpoints de la API.
+  - `auth.js`: Rutas de autenticación (Login, Callback, Logout).
+  - `followage.js`: Endpoints de la API de followage.
+  - `clips.js`: Endpoints para la creación de clips.
+  - `general.js`: Utilidades generales (`/health`, `/me`).
+- **`src/middleware/`**: Middlewares de Express (ej. `auth.js` para validación de cookies).
+- **`src/utils/`**: Funciones auxiliares (ej. `auth.js` para encriptación y manejo de tokens).
+- **`public/`**: Frontend estático organizado en carpetas (`css/`, `js/`, `twitch/`).
 
-Agrega este comando en tu Nightbot:
+---
 
+## ✨ Nuevas Características
+
+### Selector de Tipo de Enlace (UI)
+Ahora puedes elegir entre dos métodos para generar tus comandos en la web:
+
+1.  **Seguro (Recomendado)**: Genera un enlace con `auth=...` (un código encriptado). Esto protege tu token de acceso real.
+2.  **Token Público**: Genera un enlace con `token=...` visible. Útil si la base de datos no está disponible, pero es menos seguro.
+    *   *Nota:* El servidor soporta **refresco automático** de tokens públicos si coinciden con un registro previo en la base de datos.
+
+---
+
+## 🔍 Herramienta 1: Followage
+
+Consulta cuánto tiempo lleva un usuario siguiendo un canal.
+
+### Comandos para Chat
+
+**Nightbot:**
 ```
 !commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es&auth=(tu_codigo_seguro))
 ```
 
-**Para consultar a otro usuario:**
-```
-!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=ymdhis&lang=es&auth=(tu_codigo_seguro))
-```
-
-**En inglés:**
-```
-!commands add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=en&auth=(tu_codigo_seguro))
-```
-
-### Cómo usarlo in StreamElements
-
+**StreamElements:**
 ```
 !command add !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/${user}?format=ymdhis&lang=es&auth=(tu_codigo_seguro))
 ```
 
-### Ejemplos Nightbot (listos para copiar)
+**Streamlabs:**
+```
+!addcom !followage $(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&lang=es&auth=(tu_codigo_seguro))
+```
 
-```
-$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(user)?format=ymdhis&ping=false&lang=es&auth=(tu_codigo_seguro))
-```
-
-```
-$(urlfetch https://www.losperris.site/twitch/followage/$(channel)/$(touser)?format=json&lang=en&ping=true&auth=(tu_codigo_seguro))
-```
+### Parámetros Opcionales
+- `&lang=en`: Cambia el idioma de la respuesta a inglés.
+- `&ping=false`: Evita mencionar al usuario en la respuesta.
+- `&format=json`: Devuelve la respuesta en formato JSON crudo.
 
 ---
 
-## 🎬 Clips - Crear clips desde el chat
+## 🎬 Herramienta 2: Clips
 
-Crea clips de Twitch usando un comando de chat.
+Crea clips de Twitch instantáneamente usando un comando de chat.
 
-### Paso 1: Obtén tus credenciales
+### Configuración
 
-1. Ve a [www.losperris.site/twitch/clips/](https://www.losperris.site/twitch/clips/)
-2. Haz clic en **"Iniciar sesión para Clips"**
-3. Autoriza la aplicación
-4. Copia tu **Código de Autenticación (Seguro)**
+1.  Ve a [www.losperris.site/twitch/clips/](https://www.losperris.site/twitch/clips/)
+2.  Haz clic en **"Iniciar sesión para Clips"**.
+3.  Copia tu **Código de Autenticación (Seguro)**.
 
-### Paso 2: Agrega el comando en tu bot
+### Comandos para Chat
 
 **Nightbot:**
 ```
@@ -80,53 +93,37 @@ Crea clips de Twitch usando un comando de chat.
 !addcom !clip $(urlfetch https://www.losperris.site/api/clips/create?auth=(tu_codigo_seguro)&channel=$mychannel&creator=$user)
 ```
 
-> ⚠️ **Importante**: Reemplaza `(tu_codigo_seguro)` con el valor que copiaste en el Paso 1.
-> ℹ️ **Nota**: Los parámetros antiguos `user_id` y `token` siguen funcionando, pero se recomienda usar `auth` por seguridad.
+> ⚠️ **Importante**: Reemplaza `(tu_codigo_seguro)` con el código que obtuviste en la web.
 
-### Respuesta en el chat
-
-Cuando alguien use el comando `!clip`, el bot responderá:
-
-```
-✅ Clip creado por NombreUsuario: https://clips.twitch.tv/...
-```
-
-### Limitaciones
-
-- ⏱️ Máximo 3 clips cada 5 minutos
-- 📡 Solo funciona cuando el canal está en vivo
-- 🔒 Recomendado: Restringir el comando solo a subs/mods
-- ⏰ Cooldown sugerido: 5-10 segundos
+### Detalles y Limitaciones
+- **Cooldown**: Máximo 3 clips cada 5 minutos para evitar spam.
+- **Estado**: Solo funciona cuando el canal está en vivo.
+- **Permisos**: Se recomienda restringir este comando a Moderadores o Suscriptores.
+- **Creador**: El clip aparecerá creado por la cuenta que inició sesión en la web (puede ser tu cuenta de bot).
 
 ---
 
-## ❓ Preguntas frecuentes
+## ❓ Preguntas Frecuentes
 
-**¿Es gratis?**  
-Sí, completamente gratis.
+**¿Es gratis?**
+Sí, 100% gratis.
 
-**¿Necesito instalar algo?**  
-No, solo agrega los comandos a tu bot de chat.
+**¿Necesito instalar algo en mi PC?**
+No, todo funciona en la nube. Solo necesitas agregar los comandos a tu bot.
 
-**¿Quién aparece como creador del clip?**  
-El clip aparecerá creado por la cuenta que usaste para iniciar sesión en el Paso 1.
+**¿Es seguro?**
+Sí. Usamos autenticación oficial de Twitch y encriptación para proteger tus credenciales. Nunca compartas tus tokens públicamente.
 
-**¿Puedo usar una cuenta de bot?**  
-Sí! Puedes iniciar sesión con una cuenta de bot para que los clips aparezcan creados por el bot.
-
-**¿Es seguro compartir mi token?**  
-No compartas tu token públicamente. Solo úsalo en comandos privados de tu bot.
-
-**¿Funciona en otros canales?**  
-El comando de clips solo funciona en tu canal o en canales donde seas moderador.
+**¿Funciona en otros canales?**
+El comando de clips solo funciona en tu propio canal o en canales donde tu usuario tenga permisos de moderador/editor.
 
 ---
 
 ## 🆘 Soporte
 
-Si tienes problemas o preguntas:
-- Visita: [www.losperris.site](https://www.losperris.site)
-- Discord: ponsschiquito
+Si tienes problemas o dudas:
+- **Web**: [www.losperris.site](https://www.losperris.site)
+- **Discord**: ponsschiquito
 
 ---
 
