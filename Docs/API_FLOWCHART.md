@@ -51,8 +51,8 @@ graph TB
         Entry[🚀 src/server.js]
         
         subgraph "Middleware (src/middleware)"
-            AuthMiddleware[🔐 auth.js (readAuth)]
-            GlobalMiddleware[🔧 Global (json, cors)]
+            AuthMiddleware["🔐 auth.js (readAuth)"]
+            GlobalMiddleware["🔧 Global (json, cors)"]
         end
         
         subgraph "Rutas (src/routes)"
