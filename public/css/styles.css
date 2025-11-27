@@ -113,23 +113,6 @@ a:hover {
 
 .cta {
   display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 30px;
-}
-
-/* Cards & Panels */
-.card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 30px;
-  margin-bottom: 20px;
-}
-
-.card.muted {
-  background: transparent;
-  border-style: dashed;
   opacity: 0.8;
 }
 
@@ -327,7 +310,7 @@ pre code {
 
 .particle {
   position: absolute;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.5);
   border-radius: 50%;
   animation: float-particle linear infinite;
 }
