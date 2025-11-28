@@ -397,6 +397,15 @@ function buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelT
   }
 }
 
+function currentLang() {
+  return (langEl?.value || 'es');
+}
+
+function labelForState(isPassword) {
+  const lang = currentLang();
+  return isPassword ? (lang === 'en' ? 'Show' : 'Mostrar') : (lang === 'en' ? 'Hide' : 'Ocultar');
+}
+
 function updateRevealButtonsLabel() {
   if (toggleModeratorBtn && moderatorIdEl) {
     toggleModeratorBtn.textContent = labelForState(moderatorIdEl.type === 'password');
