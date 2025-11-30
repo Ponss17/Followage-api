@@ -278,8 +278,16 @@ export async function initFollowageUI() {
       const viewerEl = document.getElementById('viewer');
       const channelEl = document.getElementById('channel');
       const form = document.getElementById('followage-form');
-      if (form.checkValidity() && channelEl.value) form.dispatchEvent(new Event('submit'));
-      else updateUrlLabels();
+      if (form.checkValidity() && channelEl.value) {
+        if (typeof form.requestSubmit === 'function') {
+          form.requestSubmit();
+        } else {
+          const submitBtn = document.querySelector('#followage-form button[type="submit"]');
+          if (submitBtn) submitBtn.click();
+        }
+      } else {
+        updateUrlLabels();
+      }
     });
   }
 
