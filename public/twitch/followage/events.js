@@ -85,7 +85,7 @@ async function refreshChannelAuth() {
         const moderatorIdEl = document.getElementById('moderatorId');
         const channelTokenEl = document.getElementById('channelToken');
         const authCodeEl = document.getElementById('authCode');
-        if (moderatorIdEl) { if (chId) moderatorIdEl.value = chId; moderatorIdEl.type = 'text'; }
+        if (moderatorIdEl) { if (chId) moderatorIdEl.value = chId; moderatorIdEl.type = 'password'; }
         if (channelTokenEl && chToken) channelTokenEl.value = chToken;
         if (authCodeEl && data.auth_code) authCodeEl.value = data.auth_code;
         updateRevealButtonsLabel();
