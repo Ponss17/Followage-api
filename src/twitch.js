@@ -2,6 +2,7 @@ import NodeCache from 'node-cache';
 import { formatFollowageText, diffFromNow, formatByPattern } from './utils.js';
 
 const cache = new NodeCache({ stdTTL: 300 });
+const FOLLOW_CACHE_TTL = 60;
 const upstashUrl = process.env.UPSTASH_REDIS_REST_URL || '';
 const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN || '';
 
