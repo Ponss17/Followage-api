@@ -4,6 +4,8 @@ import { buildFollowageUrls } from './commands.js';
 
 let isAuthenticated = false;
 let isChannelAuthenticated = false;
+let lastAuthLogin = '';
+let lastChannelLogin = '';
 
 function updateRevealButtonsLabel() {
   const mBtn = document.getElementById('toggleModeratorId');
@@ -41,7 +43,8 @@ async function refreshAuth() {
       const viewerEl = document.getElementById('viewer');
       if (data.authenticated && data.user) {
         isAuthenticated = true;
-        authStatusEl.textContent = `${dict.authStatusYesPrefix}${data.user.display_name || data.user.login}`;
+        lastAuthLogin = data.user.display_name || data.user.login;
+        authStatusEl.textContent = `${dict.authStatusYesPrefix}${lastAuthLogin}`;
         loginBtn.style.display = 'none';
         logoutBtn.style.display = '';
         if (viewerEl && !viewerEl.value) viewerEl.value = data.user.login;
@@ -70,7 +73,8 @@ async function refreshChannelAuth() {
       const dict = getDict();
       if (data.authenticated && data.channel) {
         isChannelAuthenticated = true;
-        channelAuthStatusEl.textContent = `${dict.channelAuthStatusYesPrefix}${data.channel.display_name || data.channel.channel_login}`;
+        lastChannelLogin = data.channel.display_name || data.channel.channel_login;
+        channelAuthStatusEl.textContent = `${dict.channelAuthStatusYesPrefix}${lastChannelLogin}`;
         channelLoginBtn.style.display = 'none';
         channelLogoutBtn.style.display = '';
         channelNotice.style.display = 'none';
@@ -97,6 +101,7 @@ async function refreshChannelAuth() {
     }
   } catch (_) {}
 }
+let currentFetchController = null;
 export async function initFollowageUI() {
   const loginBtn = document.getElementById('loginBtn');
   const logoutBtn = document.getElementById('logoutBtn');
@@ -170,6 +175,8 @@ export async function initFollowageUI() {
     e.preventDefault();
     const submitBtn = document.querySelector('#followage-form button[type="submit"]');
     if (submitBtn) submitBtn.disabled = true;
+    if (currentFetchController) currentFetchController.abort();
+    currentFetchController = new AbortController();
     updateUrlLabels();
     const viewerEl = document.getElementById('viewer');
     const channelEl = document.getElementById('channel');
@@ -217,7 +224,7 @@ export async function initFollowageUI() {
     resultEl.textContent = dict.consulting;
     try {
       const urls = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, authCode, linkType);
-      const r = await fetch(urls.fetchUrl);
+      const r = await fetch(urls.fetchUrl, { signal: currentFetchController.signal });
       let resp = r.ok ? r : null;
       const seUrlExampleEl2 = document.getElementById('seUrlExample');
       const seUrlGenericExampleEl2 = document.getElementById('seUrlGenericExample');
@@ -228,7 +235,7 @@ export async function initFollowageUI() {
         const apiUrl = new URL('/api/followage', window.location.origin);
         apiUrl.searchParams.set('touser', viewer); apiUrl.searchParams.set('channel', channel);
         apiUrl.searchParams.set('lang', lang); apiUrl.searchParams.set('format', format);
-        resp = await fetch(apiUrl);
+        resp = await fetch(apiUrl, { signal: currentFetchController.signal });
       }
       if (!resp.ok) {
         if (resp.status === 401) resultEl.textContent = dict.errorMustAuth;
@@ -250,11 +257,20 @@ export async function initFollowageUI() {
       resultEl.textContent = `${d.errorPrefix}${err?.message || d.unknownError}`;
     } finally {
       if (submitBtn) submitBtn.disabled = false;
+      currentFetchController = null;
     }
   });
 
   const langEl = document.getElementById('lang');
-  if (langEl) langEl.addEventListener('change', () => { updateUrlLabels(); updateRevealButtonsLabel(); refreshAuth(); refreshChannelAuth(); });
+  if (langEl) langEl.addEventListener('change', () => {
+    updateUrlLabels();
+    updateRevealButtonsLabel();
+    const d = getDict();
+    const authStatusEl = document.getElementById('authStatus');
+    const channelAuthStatusEl = document.getElementById('channelAuthStatus');
+    if (authStatusEl) authStatusEl.textContent = isAuthenticated ? `${d.authStatusYesPrefix}${lastAuthLogin}` : d.authStatusNo;
+    if (channelAuthStatusEl) channelAuthStatusEl.textContent = isChannelAuthenticated ? `${d.channelAuthStatusYesPrefix}${lastChannelLogin}` : d.channelAuthStatusNo;
+  });
 
   const linkTypeRadios = document.getElementsByName('linkType');
   for (const r of linkTypeRadios) {

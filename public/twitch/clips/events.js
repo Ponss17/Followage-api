@@ -3,6 +3,7 @@ import { renderCommands } from './commands.js';
 
 let currentUserId = null;
 let currentUserToken = null;
+let currentClipController = null;
 
 export async function initClipsUI() {
   const toggleAuthBtn = document.getElementById('toggleAuthCode');
@@ -21,7 +22,9 @@ export async function initClipsUI() {
       const prev = regenAuthCodeBtn.textContent;
       regenAuthCodeBtn.disabled = true;
       try {
-        const resp = await fetch('/clips/me');
+        if (currentClipController) currentClipController.abort();
+        currentClipController = new AbortController();
+        const resp = await fetch('/clips/me', { signal: currentClipController.signal });
         if (!resp.ok) throw new Error(await resp.text());
         const data = await resp.json();
         const code = data?.auth_code || '';
@@ -37,6 +40,7 @@ export async function initClipsUI() {
         setTimeout(() => { regenAuthCodeBtn.textContent = prev; }, 1500);
       } finally {
         regenAuthCodeBtn.disabled = false;
+        currentClipController = null;
       }
     });
   }
@@ -56,8 +60,10 @@ export async function initClipsUI() {
     resultDiv.style.display = 'block';
     urlBlock.style.display = 'none';
     try {
+      if (currentClipController) currentClipController.abort();
+      currentClipController = new AbortController();
       const url = channel ? `/api/clips/create?channel=${encodeURIComponent(channel)}` : '/api/clips/create';
-      const resp = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+      const resp = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' }, signal: currentClipController.signal });
       const text = await resp.text();
       if (!resp.ok) throw new Error(text || 'Error creando clip');
       resultDiv.textContent = '✅ ¡Clip creado exitosamente!';
@@ -72,6 +78,7 @@ export async function initClipsUI() {
       resultDiv.style.color = '#f87171';
     } finally {
       if (submitBtn) submitBtn.disabled = false;
+      currentClipController = null;
     }
   });
 
