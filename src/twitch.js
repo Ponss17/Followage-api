@@ -146,7 +146,8 @@ export async function getFollowRecord(fromId, toId, userToken) {
     err.statusCode = 401;
     throw err;
   }
-  const data = await twitchFetch('users/follows', { from_id: fromId, to_id: toId, first: '1' }, userToken, { timeoutMs: 2500 });
+  const params = { user_id: fromId, broadcaster_id: toId, first: '1' };
+  const data = await twitchFetch('channels/followed', params, userToken, { timeoutMs: 2500 });
   const item = (data?.data || [])[0];
   return item || null;
 }
