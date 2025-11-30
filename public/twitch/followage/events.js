@@ -103,9 +103,40 @@ export async function initFollowageUI() {
   const channelLoginBtn = document.getElementById('channelLoginBtn');
   const channelLogoutBtn = document.getElementById('channelLogoutBtn');
   if (loginBtn) loginBtn.addEventListener('click', () => { window.location.href = new URL('/auth/login', window.location.origin).toString(); });
-  if (logoutBtn) logoutBtn.addEventListener('click', async () => { try { await fetch('/auth/logout', { method: 'POST' }); } catch (_){} window.location.reload(); });
+  if (logoutBtn) logoutBtn.addEventListener('click', async () => { try { await fetch('/auth/logout', { method: 'POST' }); } catch (_){ }
+    isAuthenticated = false;
+    const d = getDict();
+    const authStatusEl = document.getElementById('authStatus');
+    const loginBtn2 = document.getElementById('loginBtn');
+    const logoutBtn2 = document.getElementById('logoutBtn');
+    if (authStatusEl) authStatusEl.textContent = d.authStatusNo;
+    if (loginBtn2) loginBtn2.style.display = '';
+    if (logoutBtn2) logoutBtn2.style.display = 'none';
+    updateFormMode();
+  });
   if (channelLoginBtn) channelLoginBtn.addEventListener('click', () => { window.location.href = new URL('/auth/channel/login', window.location.origin).toString(); });
-  if (channelLogoutBtn) channelLogoutBtn.addEventListener('click', async () => { try { await fetch('/auth/channel/logout', { method: 'POST' }); } catch (_){ } window.location.reload(); });
+  if (channelLogoutBtn) channelLogoutBtn.addEventListener('click', async () => { try { await fetch('/auth/channel/logout', { method: 'POST' }); } catch (_){ }
+    isChannelAuthenticated = false;
+    const d = getDict();
+    const channelAuthStatusEl = document.getElementById('channelAuthStatus');
+    const channelLoginBtn2 = document.getElementById('channelLoginBtn');
+    const channelLogoutBtn2 = document.getElementById('channelLogoutBtn');
+    const channelNotice = document.getElementById('channelNotice');
+    const linkTypeContainer = document.getElementById('linkTypeContainer');
+    if (channelAuthStatusEl) channelAuthStatusEl.textContent = d.channelAuthStatusNo;
+    if (channelLoginBtn2) channelLoginBtn2.style.display = '';
+    if (channelLogoutBtn2) channelLogoutBtn2.style.display = 'none';
+    if (channelNotice) channelNotice.style.display = '';
+    if (linkTypeContainer) linkTypeContainer.style.display = 'none';
+    const moderatorIdEl = document.getElementById('moderatorId');
+    const channelTokenEl = document.getElementById('channelToken');
+    const authCodeEl = document.getElementById('authCode');
+    if (moderatorIdEl) { moderatorIdEl.value = ''; moderatorIdEl.type = 'password'; }
+    if (channelTokenEl) { channelTokenEl.value = ''; channelTokenEl.type = 'password'; }
+    if (authCodeEl) { authCodeEl.value = ''; authCodeEl.type = 'password'; }
+    updateRevealButtonsLabel();
+    updateFormMode();
+  });
 
   const toggleModeratorBtn = document.getElementById('toggleModeratorId');
   const toggleChannelBtn = document.getElementById('toggleChannelToken');
