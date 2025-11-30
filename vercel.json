@@ -2,7 +2,7 @@
   "rewrites": [
     { "source": "/auth/(.*)", "destination": "/api/app/auth/$1" },
     { "source": "/api/(.*)", "destination": "/api/app/api/$1" },
-    { "source": "/twitch/followage/(.*)", "destination": "/api/edge-followage?path=$1" },
+
     { "source": "/twitch/(.*)", "destination": "/api/app/twitch/$1" },
     { "source": "/channel/(.*)", "destination": "/api/app/channel/$1" },
     { "source": "/me", "destination": "/api/app/me" },
@@ -13,9 +13,5 @@
     { "source": "/valorantapi/(.*)", "destination": "https://los-perris-valorant-api.vercel.app/$1" },
     { "source": "/", "destination": "/public/index.html" },
     { "source": "/(.*)", "destination": "/public/$1" }
-  ],
-  "crons": [
-    { "path": "/health", "schedule": "*/2 * * * *" },
-    { "path": "/twitch/followage/losperris/losperris?format=ymdhis&lang=es", "schedule": "*/5 * * * *" }
   ]
 }
