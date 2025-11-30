@@ -54,6 +54,7 @@ export async function getTokensCollection() {
   const col = db.collection('tokens');
   if (!indexesEnsured) {
     await col.createIndex({ user_id: 1, type: 1 }, { unique: true });
+    await col.createIndex({ login: 1, type: 1 });
     indexesEnsured = true;
   }
   return col;

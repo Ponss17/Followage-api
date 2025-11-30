@@ -239,6 +239,8 @@ if (copySeUrlGenericBtn && seUrlGenericExampleEl) {
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
+  const submitBtn = document.querySelector('#followage-form button[type="submit"]');
+  if (submitBtn) submitBtn.disabled = true;
   updateUrlLabels();
   const viewer = viewerEl.value.trim();
   const channel = channelEl.value.trim();
@@ -290,12 +292,10 @@ form.addEventListener('submit', async (e) => {
       resp = r;
     }
     if (seUrlBlockEl && seUrlExampleEl && garretUrlForDisplay) {
-      seUrlExampleEl.textContent = `$(customapi.${garretUrlForDisplay})`;
-      seUrlBlockEl.style.display = '';
+      seUrlExampleEl.textContent = `$(customapi ${garretUrlForDisplay})`;      seUrlBlockEl.style.display = '';
     }
     if (seUrlGenericBlockEl && seUrlGenericExampleEl && genericUrlForDisplay) {
-      seUrlGenericExampleEl.textContent = `$(customapi.${genericUrlForDisplay})`;
-      seUrlGenericBlockEl.style.display = '';
+      seUrlGenericExampleEl.textContent = `$(customapi ${genericUrlForDisplay})`;      seUrlGenericBlockEl.style.display = '';
     }
     if (!resp) {
       if (!isAuthenticated) {
@@ -337,6 +337,9 @@ form.addEventListener('submit', async (e) => {
   } catch (err) {
     const d = getDict();
     resultEl.textContent = `${d.errorPrefix}${err?.message || d.unknownError}`;
+  } finally {
+    const submitBtn2 = document.querySelector('#followage-form button[type="submit"]');
+    if (submitBtn2) submitBtn2.disabled = false;
   }
 });
 
@@ -462,17 +465,14 @@ if (regenAuthCodeBtn && authCodeEl) {
         if (!channel) {
           if (urlGenericExampleEl) urlGenericExampleEl.textContent = `$(urlfetch ${urls.genericUrl})`;
           if (urlGenericBlockEl) urlGenericBlockEl.style.display = '';
-          if (seUrlGenericExampleEl) seUrlGenericExampleEl.textContent = `$(customapi.${urls.genericUrl})`;
-          if (seUrlGenericBlockEl) seUrlGenericBlockEl.style.display = '';
+          if (seUrlGenericExampleEl) seUrlGenericExampleEl.textContent = `$(customapi ${urls.genericUrl})`;          if (seUrlGenericBlockEl) seUrlGenericBlockEl.style.display = '';
           if (urlBlockEl) urlBlockEl.style.display = 'none';
           if (seUrlBlockEl) seUrlBlockEl.style.display = 'none';
         } else {
           if (urlExampleEl) urlExampleEl.textContent = `$(urlfetch ${urls.displayUrl})`;
           if (urlGenericExampleEl) urlGenericExampleEl.textContent = `$(urlfetch ${urls.genericUrl})`;
-          if (seUrlExampleEl) seUrlExampleEl.textContent = `$(customapi.${urls.displayUrl})`;
-          if (seUrlBlockEl) seUrlBlockEl.style.display = '';
-          if (seUrlGenericExampleEl) seUrlGenericExampleEl.textContent = `$(customapi.${urls.genericUrl})`;
-          if (seUrlGenericBlockEl) seUrlGenericBlockEl.style.display = '';
+          if (seUrlExampleEl) seUrlExampleEl.textContent = `$(customapi ${urls.displayUrl})`;          if (seUrlBlockEl) seUrlBlockEl.style.display = '';
+          if (seUrlGenericExampleEl) seUrlGenericExampleEl.textContent = `$(customapi ${urls.genericUrl})`;          if (seUrlGenericBlockEl) seUrlGenericBlockEl.style.display = '';
         }
       } else {
         throw new Error('no_code');

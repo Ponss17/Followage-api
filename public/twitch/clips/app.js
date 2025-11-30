@@ -69,7 +69,7 @@ async function checkClipsAuth() {
 
 function renderCommands(baseUrl, authCode, userId, token) {
     const authParam = authCode ? `auth=${authCode}` : `user_id=${userId}&token=${token}`;
-    const seCommand = `$(customapi.${baseUrl}/api/clips/create?${authParam}&channel=$(channel)&creator=\${user})`;
+    const seCommand = `$(customapi ${baseUrl}/api/clips/create?${authParam}&channel=$(channel)&creator=\${user})`;
     const streamElementsCommand = document.getElementById('streamElementsCommand');
     if (streamElementsCommand) streamElementsCommand.textContent = seCommand;
     const nbCommand = `$(urlfetch ${baseUrl}/api/clips/create?${authParam}&channel=$(channel)&creator=$(user))`;

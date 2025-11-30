@@ -15,6 +15,16 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3000;
 
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const dur = Date.now() - start;
+    const path = req.originalUrl || req.url;
+    console.log(`[metrics] ${req.method} ${path} -> ${res.statusCode} in ${dur}ms`);
+  });
+  next();
+});
+
 app.set('trust proxy', 1);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,6 +55,7 @@ app.use((err, req, res, next) => {
   console.error(err);
   const status = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
+  res.set('Cache-Control', 'no-store');
   res.status(status).json({ error: true, message });
 });
 
