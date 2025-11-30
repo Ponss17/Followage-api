@@ -421,13 +421,11 @@ function updateRevealButtonsLabel() {
   }
 }
 
-//  valores ocultos
 if (moderatorIdEl) moderatorIdEl.type = 'password';
 if (channelTokenEl) channelTokenEl.type = 'password';
 if (authCodeEl) authCodeEl.type = 'password';
 updateRevealButtonsLabel();
 
-// regenerar código seguro
 if (regenAuthCodeBtn && authCodeEl) {
   regenAuthCodeBtn.addEventListener('click', async () => {
     const prev = regenAuthCodeBtn.textContent;
@@ -486,7 +484,6 @@ if (regenAuthCodeBtn && authCodeEl) {
   });
 }
 
-// mostrar/ocultar
 if (toggleModeratorBtn && moderatorIdEl) {
   toggleModeratorBtn.addEventListener('click', () => {
     moderatorIdEl.type = (moderatorIdEl.type === 'password') ? 'text' : 'password';
@@ -506,7 +503,6 @@ if (toggleAuthBtn && authCodeEl) {
   });
 }
 
-// Selección de idioma
 if (langEl) {
   langEl.addEventListener('change', () => {
     updateUrlLabels();

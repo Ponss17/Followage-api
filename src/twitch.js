@@ -1,8 +1,27 @@
 import NodeCache from 'node-cache';
 import { formatFollowageText, diffFromNow, formatByPattern } from './utils.js';
 
-const cache = new NodeCache({ stdTTL: 300 }); // 5 minutes cache
-const FOLLOW_CACHE_TTL = 60;
+const cache = new NodeCache({ stdTTL: 300 });
+const upstashUrl = process.env.UPSTASH_REDIS_REST_URL || '';
+const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN || '';
+
+async function redisGet(key) {
+  if (!upstashUrl || !upstashToken) return null;
+  try {
+    const r = await fetch(`${upstashUrl}/get/${encodeURIComponent(key)}`, { headers: { Authorization: `Bearer ${upstashToken}` } });
+    if (!r.ok) return null;
+    const j = await r.json();
+    if (j?.result == null) return null;
+    try { return JSON.parse(j.result); } catch (_) { return j.result; }
+  } catch (_) { return null; }
+}
+async function redisSet(key, value, ttlSec) {
+  if (!upstashUrl || !upstashToken) return;
+  try {
+    const val = typeof value === 'string' ? value : JSON.stringify(value);
+    await fetch(`${upstashUrl}/set/${encodeURIComponent(key)}/${encodeURIComponent(val)}?EX=${ttlSec}`, { headers: { Authorization: `Bearer ${upstashToken}` } });
+  } catch (_) {}
+}
 
 let cachedToken = null;
 let cachedTokenExp = 0;
@@ -158,8 +177,15 @@ export async function getFollowageJsonByFollowers({ viewer, channel, channelToke
   const fKey = `f_${channelUser.id}_${viewerUser.id}`;
   let follow = cache.get(fKey);
   if (follow === undefined) {
-    follow = await getFollowerRecordByChannelToken(channelUser.id, viewerUser.id, channelToken);
-    cache.set(fKey, follow || null, FOLLOW_CACHE_TTL);
+    const fromRedis = await redisGet(fKey);
+    if (fromRedis !== null) {
+      follow = fromRedis;
+      cache.set(fKey, follow || null, FOLLOW_CACHE_TTL);
+    } else {
+      follow = await getFollowerRecordByChannelToken(channelUser.id, viewerUser.id, channelToken);
+      cache.set(fKey, follow || null, FOLLOW_CACHE_TTL);
+      await redisSet(fKey, follow || null, FOLLOW_CACHE_TTL);
+    }
   }
   if (!follow) {
     return {
@@ -207,8 +233,15 @@ export async function getFollowageJson({ viewer, channel, userToken }) {
   const fKey = `fu_${viewerUser.id}_${channelUser.id}`;
   let follow = cache.get(fKey);
   if (follow === undefined) {
-    follow = await getFollowRecord(viewerUser.id, channelUser.id, userToken);
-    cache.set(fKey, follow || null, FOLLOW_CACHE_TTL);
+    const fromRedis = await redisGet(fKey);
+    if (fromRedis !== null) {
+      follow = fromRedis;
+      cache.set(fKey, follow || null, FOLLOW_CACHE_TTL);
+    } else {
+      follow = await getFollowRecord(viewerUser.id, channelUser.id, userToken);
+      cache.set(fKey, follow || null, FOLLOW_CACHE_TTL);
+      await redisSet(fKey, follow || null, FOLLOW_CACHE_TTL);
+    }
   }
   if (!follow) {
     return {

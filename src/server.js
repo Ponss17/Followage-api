@@ -34,10 +34,8 @@ app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Middleware
 app.use(readAuth);
 
-// Rutas
 app.use('/auth', authRoutes);
 app.use(followageRoutes);
 app.use(clipsRoutes);

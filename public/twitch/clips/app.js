@@ -13,12 +13,10 @@ async function checkClipsAuth() {
             document.getElementById('clipsLogoutBtn').style.display = 'inline-block';
             document.getElementById('clipsNotice').style.display = 'none';
 
-            // Mostrar la sección de comandos
             const commandsSection = document.getElementById('commands');
             if (commandsSection) {
                 commandsSection.style.display = 'block';
 
-                // User ID y Access Token (con verificación de existencia)
                 const userIdInput = document.getElementById('userId');
                 if (userIdInput) {
                     userIdInput.value = data.clips.id;
@@ -29,7 +27,6 @@ async function checkClipsAuth() {
                     accessTokenInput.value = data.clips.access_token;
                 }
 
-                // Auth Code
                 const authCode = data.auth_code;
                 if (authCode) {
                     const authCodeInput = document.getElementById('authCode');
@@ -98,12 +95,10 @@ function setupCopy(btnId, codeId) {
 }
 
 
-// Login boton
 document.getElementById('clipsLoginBtn').addEventListener('click', () => {
     window.location.href = '/auth/clips/login';
 });
 
-// Logout boton
 document.getElementById('clipsLogoutBtn').addEventListener('click', async () => {
     try {
         await fetch('/auth/clips/logout', { method: 'POST' });
@@ -114,7 +109,6 @@ document.getElementById('clipsLogoutBtn').addEventListener('click', async () => 
     }
 });
 
-// Clip 
 document.getElementById('clips-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 

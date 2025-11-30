@@ -1,26 +1,19 @@
 import express from 'express';
 import { createClip, getUserByLogin } from '../twitch.js';
 import { extractAuthCredentials, upsertTokenRecord, refreshAccessToken } from '../utils/auth.js';
+import { getClipRateCollection } from '../db.js';
 
 const router = express.Router();
 const TWITCH_LOGIN_REGEX = /^[A-Za-z0-9_]{1,32}$/;
 
 const CLIP_WINDOW_MS = 5 * 60 * 1000;
 const CLIP_MAX = 3;
-const clipRate = new Map();
 
-function canCreateClip(userId) {
-    const now = Date.now();
-    const key = String(userId || 'anon');
-    const list = clipRate.get(key) || [];
-    const recent = list.filter(t => now - t < CLIP_WINDOW_MS);
-    if (recent.length >= CLIP_MAX) {
-        clipRate.set(key, recent);
-        return false;
-    }
-    recent.push(now);
-    clipRate.set(key, recent);
-    return true;
+async function canCreateClipPersistent(userId) {
+    const col = await getClipRateCollection();
+    const now = new Date();
+    const count = await col.countDocuments({ user_id: String(userId), expire_at: { $gt: now } });
+    return count < CLIP_MAX;
 }
 
 router.get('/api/clips/create', async (req, res) => {
@@ -56,7 +49,7 @@ router.get('/api/clips/create', async (req, res) => {
             broadcasterId = userId;
         }
 
-        if (!canCreateClip(userId)) {
+        if (!(await canCreateClipPersistent(userId))) {
             const msg = lang === 'es' ? 'Cooldown: máximo 3 clips cada 5 minutos' : 'Cooldown: max 3 clips per 5 minutes';
             return res.type('text/plain').status(200).send(msg);
         }
@@ -66,6 +59,8 @@ router.get('/api/clips/create', async (req, res) => {
         const msgOk = creator
             ? (lang === 'es' ? `✅ Clip creado por ${creator}: ${clipUrl}` : `✅ Clip created by ${creator}: ${clipUrl}`)
             : (lang === 'es' ? `✅ Clip creado: ${clipUrl}` : `✅ Clip created: ${clipUrl}`);
+        const col = await getClipRateCollection();
+        await col.insertOne({ user_id: String(userId), created_at: new Date(), expire_at: new Date(Date.now() + CLIP_WINDOW_MS) });
         return res.type('text/plain').status(200).send(msgOk);
     } catch (err) {
         const status = err?.statusCode || 500;
@@ -88,8 +83,10 @@ router.get('/api/clips/create', async (req, res) => {
                 const clipData2 = await createClip({ broadcasterId, userToken });
                 const clipUrl = clipData2.url || '';
                 const msgOk = creator ? (lang === 'es' ? `✅ Clip creado por ${creator}: ${clipUrl}` : `✅ Clip created by ${creator}: ${clipUrl}`) : (lang === 'es' ? `✅ Clip creado: ${clipUrl}` : `✅ Clip created: ${clipUrl}`);
+                const col = await getClipRateCollection();
+                await col.insertOne({ user_id: String(userId), created_at: new Date(), expire_at: new Date(Date.now() + CLIP_WINDOW_MS) });
                 return res.type('text/plain').status(200).send(msgOk);
-            } catch (_e2) { /* fall through to mapping */ }
+            } catch (_e2) {  }
         }
         let msg;
         if (status === 401) msg = lang === 'es' ? 'Debes iniciar sesión para crear clips' : 'Authentication required';
@@ -100,7 +97,6 @@ router.get('/api/clips/create', async (req, res) => {
     }
 });
 
-// POST clips
 router.post('/api/clips/create', async (req, res) => {
     res.status(405).send('Use GET for now');
 });

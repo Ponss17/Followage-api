@@ -55,8 +55,20 @@ export async function getTokensCollection() {
   if (!indexesEnsured) {
     await col.createIndex({ user_id: 1, type: 1 }, { unique: true });
     await col.createIndex({ login: 1, type: 1 });
-    indexesEnsured = true;
   }
+  return col;
+}
+
+export async function getClipRateCollection() {
+  if (!hasUri) return memoryCol;
+  if (!connected) {
+    await client.connect();
+    connected = true;
+  }
+  const db = client.db(dbName);
+  const col = db.collection('clip_rate');
+  await col.createIndex({ expire_at: 1 }, { expireAfterSeconds: 0 });
+  await col.createIndex({ user_id: 1 });
   return col;
 }
 
