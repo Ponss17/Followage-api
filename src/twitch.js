@@ -21,7 +21,7 @@ async function redisSet(key, value, ttlSec) {
   try {
     const val = typeof value === 'string' ? value : JSON.stringify(value);
     await fetch(`${upstashUrl}/set/${encodeURIComponent(key)}/${encodeURIComponent(val)}?EX=${ttlSec}`, { headers: { Authorization: `Bearer ${upstashToken}` } });
-  } catch (_) {}
+  } catch (_) { }
 }
 
 let cachedToken = null;
@@ -265,7 +265,14 @@ export async function getFollowageJson({ viewer, channel, userToken }) {
 
 export async function getFollowageText({ viewer, channel, lang = 'es', userToken }) {
   const json = await getFollowageJson({ viewer, channel, userToken });
-  return formatFollowageText(json, lang);
+  const notFollowingText = lang === 'es' ? `${viewer} no sigue a ${channel}.` : `${viewer} is not following ${channel}.`;
+
+  if (!json.following) return notFollowingText;
+
+  const formatted = formatByPattern(json.duration, 'ymdhis', lang);
+  return lang === 'es'
+    ? `${viewer} lleva siguiendo a ${channel} ${formatted}`
+    : `${viewer} has been following ${channel} for ${formatted}`;
 }
 
 export async function createClip({ broadcasterId, userToken }) {
