@@ -34,7 +34,6 @@ async function handleClipRequest(req, res, responseType = 'text') {
             }
             return res.status(status).json({ ...data, message });
         }
-        // For text response, we always return 200 so bots can display the message
         return res.type('text/plain').status(200).send(message);
     };
 
@@ -85,7 +84,6 @@ async function handleClipRequest(req, res, responseType = 'text') {
             try {
                 const r = await refreshAccessToken(refreshToken);
                 userToken = r.access_token;
-                // We don't have login here easily, but upsertTokenRecord handles missing login gracefully now.
                 await upsertTokenRecord({
                     user_id: userId,
                     type: 'clips',

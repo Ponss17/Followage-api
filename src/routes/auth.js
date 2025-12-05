@@ -1,5 +1,4 @@
-import express from 'express';
-import { getTwitchHeaders, setAuthCookie, setChannelCookie, setClipsCookie } from '../utils/auth.js';
+import { getTwitchHeaders, setAuthCookie, setChannelCookie, setClipsCookie, upsertTokenRecord } from '../utils/auth.js';
 
 const router = express.Router();
 
@@ -65,6 +64,26 @@ async function handleOAuthCallback(req, res, options) {
             token_expires_in: tokenJson.expires_in,
             ...extraData
         };
+
+        // Persist token to DB immediately
+        try {
+            let type = 'user';
+            if (extraData.scope === 'clips:edit') type = 'clips';
+            else if (extraData.scope === 'moderator:read:followers') type = 'channel';
+
+            await upsertTokenRecord({
+                user_id: user.id,
+                login: user.login,
+                type: type,
+                access_token: accessToken,
+                refresh_token: tokenJson.refresh_token,
+                scope: extraData.scope || '',
+                token_obtained_at: Date.now(),
+                token_expires_in: tokenJson.expires_in
+            });
+        } catch (dbErr) {
+            console.error('Error saving token to DB:', dbErr);
+        }
 
         cookieSetter(req, res, cookieData);
         res.redirect(redirectPath);

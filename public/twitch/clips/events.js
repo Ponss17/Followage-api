@@ -138,7 +138,6 @@ export async function initClipsUI() {
     if (resp.ok) {
       const data = await resp.json();
       if (data.authenticated && data.clips) {
-        // Authenticated
         if (authStatus) authStatus.textContent = `Autenticado como ${data.clips.display_name}`;
         if (loginBtn) loginBtn.style.display = 'none';
         if (logoutBtn) logoutBtn.style.display = 'inline-block';
@@ -153,7 +152,6 @@ export async function initClipsUI() {
         renderCommands(baseUrl, authCode, currentUserId, currentUserToken);
         if (authCode && authCodeEl) authCodeEl.value = authCode;
       } else {
-        // Not authenticated
         if (authStatus) authStatus.textContent = 'No autenticado';
         if (loginBtn) loginBtn.style.display = 'inline-block';
         if (logoutBtn) logoutBtn.style.display = 'none';

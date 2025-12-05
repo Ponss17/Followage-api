@@ -78,7 +78,9 @@ router.get('/clips/me', async (req, res) => {
             token_expires_in: req.clips.token_expires_in
         });
         authCode = encrypt(JSON.stringify({ user_id: req.clips.id, type: 'clips' }));
-    } catch (_) { }
+    } catch (err) {
+        console.error('Error generating auth code:', err);
+    }
 
     res.json({
         authenticated: true,
