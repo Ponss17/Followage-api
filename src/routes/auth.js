@@ -1,3 +1,4 @@
+import express from 'express';
 import { getTwitchHeaders, setAuthCookie, setChannelCookie, setClipsCookie, upsertTokenRecord } from '../utils/auth.js';
 
 const router = express.Router();
