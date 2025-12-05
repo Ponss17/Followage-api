@@ -54,19 +54,25 @@ export async function refreshAccessToken(refreshToken) {
 export async function upsertTokenRecord({ user_id, login, type, access_token, refresh_token, scope, token_obtained_at, token_expires_in }) {
     const col = await getTokensCollection();
     const now = Date.now();
+
+    const setFields = {
+        access_token: String(access_token || ''),
+        refresh_token: refresh_token ? String(refresh_token) : null,
+        scope: String(scope || ''),
+        token_obtained_at: token_obtained_at || now,
+        token_expires_in: token_expires_in || 0,
+        updated_at: now
+    };
+
+    if (login) {
+        setFields.login = String(login);
+    }
+
     const res = await col.findOneAndUpdate(
         { user_id: String(user_id), type: String(type) },
         {
-            $set: {
-                login: String(login || ''),
-                access_token: String(access_token || ''),
-                refresh_token: refresh_token ? String(refresh_token) : null,
-                scope: String(scope || ''),
-                token_obtained_at: token_obtained_at || now,
-                token_expires_in: token_expires_in || 0,
-                updated_at: now
-            },
-            $setOnInsert: { created_at: now }
+            $set: setFields,
+            $setOnInsert: { created_at: now, ...(login ? {} : { login: '' }) }
         },
         { upsert: true, returnDocument: 'after' }
     );
