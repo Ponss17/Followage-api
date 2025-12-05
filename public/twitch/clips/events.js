@@ -9,6 +9,30 @@ export async function initClipsUI() {
   const toggleAuthBtn = document.getElementById('toggleAuthCode');
   const authCodeEl = document.getElementById('authCode');
   const regenAuthCodeBtn = document.getElementById('regenAuthCodeBtn');
+  const loginBtn = document.getElementById('clipsLoginBtn');
+  const logoutBtn = document.getElementById('clipsLogoutBtn');
+  const authStatus = document.getElementById('clipsAuthStatus');
+  const clipsNotice = document.getElementById('clipsNotice');
+  const commandsSection = document.getElementById('commands');
+
+  if (loginBtn) {
+    loginBtn.addEventListener('click', () => {
+      window.location.href = '/auth/clips/login';
+    });
+  }
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', async () => {
+      try {
+        await fetch('/auth/clips/logout', { method: 'POST' });
+        window.location.reload();
+      } catch (err) {
+        console.error('Error logging out:', err);
+        alert('Error al cerrar sesión');
+      }
+    });
+  }
+
   if (authCodeEl) authCodeEl.type = 'password';
   if (toggleAuthBtn && authCodeEl) {
     toggleAuthBtn.addEventListener('click', () => {
@@ -44,54 +68,98 @@ export async function initClipsUI() {
       }
     });
   }
-  setupCopy('copyNightbotBtn','nightbotCommand');
-  setupCopy('copyStreamlabsBtn','streamlabsCommand');
-  setupCopy('copyStreamElementsBtn','streamElementsCommand');
+  setupCopy('copyNightbotBtn', 'nightbotCommand');
+  setupCopy('copyStreamlabsBtn', 'streamlabsCommand');
+  setupCopy('copyStreamElementsBtn', 'streamElementsCommand');
 
   const form = document.getElementById('clips-form');
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const resultDiv = document.getElementById('clipResult');
-    const urlBlock = document.getElementById('clip-url-block');
-    const channel = document.getElementById('clipChannel').value.trim();
-    const submitBtn = document.querySelector('#clips-form button[type="submit"]');
-    if (submitBtn) submitBtn.disabled = true;
-    resultDiv.textContent = 'Creando clip...';
-    resultDiv.style.display = 'block';
-    urlBlock.style.display = 'none';
-    try {
-      if (currentClipController) currentClipController.abort();
-      currentClipController = new AbortController();
-      const url = channel ? `/api/clips/create?channel=${encodeURIComponent(channel)}` : '/api/clips/create';
-      const resp = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' }, signal: currentClipController.signal });
-      const text = await resp.text();
-      if (!resp.ok) throw new Error(text || 'Error creando clip');
-      resultDiv.textContent = '✅ ¡Clip creado exitosamente!';
-      resultDiv.style.color = '#4ade80';
-      const dataUrlMatch = text.match(/https?:\/\/clips\.twitch\.tv\/\S+/);
-      const clipUrl = dataUrlMatch ? dataUrlMatch[0] : '';
-      document.getElementById('clipUrl').textContent = clipUrl;
-      document.getElementById('clipUrl').href = clipUrl;
-      urlBlock.style.display = 'block';
-    } catch (err) {
-      resultDiv.textContent = `❌ Error: ${err.message}`;
-      resultDiv.style.color = '#f87171';
-    } finally {
-      if (submitBtn) submitBtn.disabled = false;
-      currentClipController = null;
-    }
-  });
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const resultDiv = document.getElementById('clipResult');
+      const urlBlock = document.getElementById('clip-url-block');
+      const channel = document.getElementById('clipChannel').value.trim();
+      const submitBtn = document.querySelector('#clips-form button[type="submit"]');
+
+      if (submitBtn) submitBtn.disabled = true;
+      resultDiv.textContent = 'Creando clip...';
+      resultDiv.style.display = 'block';
+      urlBlock.style.display = 'none';
+
+      try {
+        if (currentClipController) currentClipController.abort();
+        currentClipController = new AbortController();
+
+        const url = channel ? `/api/clips/create?channel=${encodeURIComponent(channel)}` : '/api/clips/create';
+        const resp = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: currentClipController.signal
+        });
+
+        const data = await resp.json();
+
+        if (!resp.ok) {
+          throw new Error(data.message || 'Error creando clip');
+        }
+
+        resultDiv.textContent = '✅ ¡Clip creado exitosamente!';
+        resultDiv.style.color = '#4ade80';
+
+        const clipUrl = data.url || '';
+        const editUrl = data.edit_url || '';
+
+        const clipUrlEl = document.getElementById('clipUrl');
+        const clipEditUrlEl = document.getElementById('clipEditUrl');
+
+        if (clipUrlEl) {
+          clipUrlEl.textContent = clipUrl;
+          clipUrlEl.href = clipUrl;
+        }
+        if (clipEditUrlEl) {
+          clipEditUrlEl.textContent = editUrl;
+          clipEditUrlEl.href = editUrl;
+        }
+
+        urlBlock.style.display = 'block';
+      } catch (err) {
+        if (err.name === 'AbortError') return;
+        resultDiv.textContent = `❌ Error: ${err.message}`;
+        resultDiv.style.color = '#f87171';
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+        currentClipController = null;
+      }
+    });
+  }
 
   try {
     const resp = await fetch('/clips/me');
     if (resp.ok) {
       const data = await resp.json();
-      const authCode = data.auth_code;
-      currentUserId = data.clips?.id || null;
-      currentUserToken = data.clips?.access_token || null;
-      const baseUrl = window.location.origin;
-      renderCommands(baseUrl, authCode, currentUserId, currentUserToken);
-      if (authCode && authCodeEl) authCodeEl.value = authCode;
+      if (data.authenticated && data.clips) {
+        // Authenticated
+        if (authStatus) authStatus.textContent = `Autenticado como ${data.clips.display_name}`;
+        if (loginBtn) loginBtn.style.display = 'none';
+        if (logoutBtn) logoutBtn.style.display = 'inline-block';
+        if (clipsNotice) clipsNotice.style.display = 'none';
+        if (commandsSection) commandsSection.style.display = 'block';
+
+        const authCode = data.auth_code;
+        currentUserId = data.clips?.id || null;
+        currentUserToken = data.clips?.access_token || null;
+
+        const baseUrl = window.location.origin;
+        renderCommands(baseUrl, authCode, currentUserId, currentUserToken);
+        if (authCode && authCodeEl) authCodeEl.value = authCode;
+      } else {
+        // Not authenticated
+        if (authStatus) authStatus.textContent = 'No autenticado';
+        if (loginBtn) loginBtn.style.display = 'inline-block';
+        if (logoutBtn) logoutBtn.style.display = 'none';
+        if (clipsNotice) clipsNotice.style.display = 'block';
+        if (commandsSection) commandsSection.style.display = 'none';
+      }
     }
-  } catch (_) {}
+  } catch (_) { }
 }
