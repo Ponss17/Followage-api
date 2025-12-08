@@ -66,15 +66,34 @@ async function checkClipsAuth() {
 
 function renderCommands(baseUrl, authCode, userId, token) {
     const authParam = authCode ? `auth=${authCode}` : `user_id=${userId}&token=${token}`;
-    const seCommand = `$(customapi ${baseUrl}/api/clips/create?${authParam}&channel=$(channel)&creator=\${user})`;
+    const maskedAuthParam = authCode ? `auth=${authCode.substring(0, 4)}...${authCode.substring(authCode.length - 4)}` : `user_id=${userId}&token=${token.substring(0, 4)}...`;
+
+    // StreamElements
+    const seFull = `$(customapi ${baseUrl}/api/clips/create?${authParam}&channel=$(channel)&creator=\${user})`;
+    const seMasked = `$(customapi ${baseUrl}/api/clips/create?${maskedAuthParam}&channel=$(channel)&creator=\${user})`;
     const streamElementsCommand = document.getElementById('streamElementsCommand');
-    if (streamElementsCommand) streamElementsCommand.textContent = seCommand;
-    const nbCommand = `$(urlfetch ${baseUrl}/api/clips/create?${authParam}&channel=$(channel)&creator=$(user))`;
+    if (streamElementsCommand) {
+        streamElementsCommand.textContent = seMasked;
+        streamElementsCommand.setAttribute('data-full-command', seFull);
+    }
+
+    // Nightbot
+    const nbFull = `$(urlfetch ${baseUrl}/api/clips/create?${authParam}&channel=$(channel)&creator=$(user))`;
+    const nbMasked = `$(urlfetch ${baseUrl}/api/clips/create?${maskedAuthParam}&channel=$(channel)&creator=$(user))`;
     const nightbotCommand = document.getElementById('nightbotCommand');
-    if (nightbotCommand) nightbotCommand.textContent = nbCommand;
-    const slCommand = `$readapi(${baseUrl}/api/clips/create?${authParam}&channel=$mychannel&creator=$user)`;
+    if (nightbotCommand) {
+        nightbotCommand.textContent = nbMasked;
+        nightbotCommand.setAttribute('data-full-command', nbFull);
+    }
+
+    // Streamlabs
+    const slFull = `$readapi(${baseUrl}/api/clips/create?${authParam}&channel=$mychannel&creator=$user)`;
+    const slMasked = `$readapi(${baseUrl}/api/clips/create?${maskedAuthParam}&channel=$mychannel&creator=$user)`;
     const streamlabsCommand = document.getElementById('streamlabsCommand');
-    if (streamlabsCommand) streamlabsCommand.textContent = slCommand;
+    if (streamlabsCommand) {
+        streamlabsCommand.textContent = slMasked;
+        streamlabsCommand.setAttribute('data-full-command', slFull);
+    }
 }
 
 function setupCopy(btnId, codeId) {
@@ -82,7 +101,7 @@ function setupCopy(btnId, codeId) {
     const codeEl = document.getElementById(codeId);
     if (btn && codeEl) {
         btn.addEventListener('click', async () => {
-            const text = codeEl.textContent || '';
+            const text = codeEl.getAttribute('data-full-command') || codeEl.textContent || '';
             if (!text) return;
             try {
                 await navigator.clipboard.writeText(text);
