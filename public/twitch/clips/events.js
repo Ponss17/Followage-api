@@ -1,27 +1,31 @@
 import { setupCopy } from '/js/copy.js';
 
 function renderCommands(baseUrl, authCode, userId, token) {
-  console.log('Rendering commands:', { baseUrl, authCode, userId, token });
   const authParam = authCode ? `auth=${authCode}` : `user_id=${userId}&token=${token}`;
+  const maskedAuthParam = authCode ? `auth=${authCode.substring(0, 4)}...${authCode.substring(authCode.length - 4)}` : `user_id=${userId}&token=${token.substring(0, 4)}...`;
 
-  const seCommand = `$(customapi ${baseUrl}/api/clips/create?${authParam}&channel=$(channel)&creator=\${user})`;
+  const seFull = `$(customapi ${baseUrl}/api/clips/create?${authParam}&channel=$(channel)&creator=\${user})`;
+  const seMasked = `$(customapi ${baseUrl}/api/clips/create?${maskedAuthParam}&channel=$(channel)&creator=\${user})`;
   const streamElementsCommand = document.getElementById('streamElementsCommand');
   if (streamElementsCommand) {
-    streamElementsCommand.textContent = seCommand;
-  } else {
-    console.error('Element streamElementsCommand not found');
+    streamElementsCommand.textContent = seMasked;
+    streamElementsCommand.setAttribute('data-full-command', seFull);
   }
 
-  const nbCommand = `$(urlfetch ${baseUrl}/api/clips/create?${authParam}&channel=$(channel)&creator=$(user))`;
+  const nbFull = `$(urlfetch ${baseUrl}/api/clips/create?${authParam}&channel=$(channel)&creator=$(user))`;
+  const nbMasked = `$(urlfetch ${baseUrl}/api/clips/create?${maskedAuthParam}&channel=$(channel)&creator=$(user))`;
   const nightbotCommand = document.getElementById('nightbotCommand');
   if (nightbotCommand) {
-    nightbotCommand.textContent = nbCommand;
+    nightbotCommand.textContent = nbMasked;
+    nightbotCommand.setAttribute('data-full-command', nbFull);
   }
 
-  const slCommand = `$readapi(${baseUrl}/api/clips/create?${authParam}&channel=$mychannel&creator=$user)`;
+  const slFull = `$readapi(${baseUrl}/api/clips/create?${authParam}&channel=$mychannel&creator=$user)`;
+  const slMasked = `$readapi(${baseUrl}/api/clips/create?${maskedAuthParam}&channel=$mychannel&creator=$user)`;
   const streamlabsCommand = document.getElementById('streamlabsCommand');
   if (streamlabsCommand) {
-    streamlabsCommand.textContent = slCommand;
+    streamlabsCommand.textContent = slMasked;
+    streamlabsCommand.setAttribute('data-full-command', slFull);
   }
 }
 
@@ -130,22 +134,33 @@ export async function initClipsUI() {
         resultDiv.textContent = '✅ ¡Clip creado exitosamente!';
         resultDiv.style.color = '#4ade80';
 
-        const clipUrl = data.url || '';
-        const editUrl = data.edit_url || '';
+        const clipTitle = data.title || 'Clip creado';
+        const clipThumb = data.thumbnail_url || 'https://vod-secure.twitch.tv/_404/404_processing_480x272.png';
+        const clipCreator = data.creator_name || 'Desconocido';
+        const clipDuration = data.duration ? `${Math.round(data.duration)}s` : '';
 
-        const clipUrlEl = document.getElementById('clipUrl');
-        const clipEditUrlEl = document.getElementById('clipEditUrl');
+        urlBlock.style.display = 'none';
 
-        if (clipUrlEl) {
-          clipUrlEl.textContent = clipUrl;
-          clipUrlEl.href = clipUrl;
-        }
-        if (clipEditUrlEl) {
-          clipEditUrlEl.textContent = editUrl;
-          clipEditUrlEl.href = editUrl;
-        }
-
-        urlBlock.style.display = 'block';
+        resultDiv.innerHTML = `
+            <div class="clip-card" style="background: rgba(255,255,255,0.05); border-radius: 12px; padding: 16px; margin-top: 20px; display: flex; flex-direction: column; gap: 12px; border: 1px solid rgba(255,255,255,0.1);">
+                <div style="position: relative; width: 100%; aspect-ratio: 16/9; overflow: hidden; border-radius: 8px;">
+                    <img src="${clipThumb}" alt="Clip Thumbnail" style="width: 100%; height: 100%; object-fit: cover;">
+                    ${clipDuration ? `<span style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.8); color: white; padding: 2px 6px; border-radius: 4px; font-size: 12px; font-weight: 600;">${clipDuration}</span>` : ''}
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 4px;">
+                    <h3 style="margin: 0; font-size: 16px; color: #fff;">${clipTitle}</h3>
+                    <p style="margin: 0; font-size: 14px; color: #aaa;">Creado por <strong>${clipCreator}</strong></p>
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 4px;">
+                    <a href="${data.url}" target="_blank" class="btn" style="flex: 1; text-align: center; text-decoration: none; font-size: 14px; padding: 8px;">Ver Clip</a>
+                    <a href="${data.edit_url}" target="_blank" class="btn btn-secondary" style="flex: 1; text-align: center; text-decoration: none; font-size: 14px; padding: 8px;">Editar</a>
+                </div>
+                <div style="margin-top: 8px; font-size: 12px; color: #666; display: flex; align-items: center; gap: 8px;">
+                    <input type="text" value="${data.url}" readonly style="flex: 1; background: rgba(0,0,0,0.2); border: none; color: #888; padding: 4px 8px; border-radius: 4px;">
+                    <button class="reveal-btn" onclick="navigator.clipboard.writeText('${data.url}')">Copiar</button>
+                </div>
+            </div>
+        `;
       } catch (err) {
         if (err.name === 'AbortError') return;
         resultDiv.textContent = `❌ Error: ${err.message}`;

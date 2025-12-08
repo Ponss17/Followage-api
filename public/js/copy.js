@@ -7,12 +7,15 @@ export async function copyToClipboard(text, btn) {
       btn.textContent = (document.getElementById('lang')?.value === 'en') ? 'Copied' : 'Copiado';
       setTimeout(() => { btn.textContent = prev; }, 1500);
     }
-  } catch (_) {}
+  } catch (_) { }
 }
 export function setupCopy(btnId, codeId) {
   const btn = document.getElementById(btnId);
   const codeEl = document.getElementById(codeId);
   if (btn && codeEl) {
-    btn.addEventListener('click', () => copyToClipboard(codeEl.textContent, btn));
+    btn.addEventListener('click', () => {
+      const text = codeEl.getAttribute('data-full-command') || codeEl.textContent;
+      copyToClipboard(text, btn);
+    });
   }
 }
