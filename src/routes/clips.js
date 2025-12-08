@@ -66,9 +66,18 @@ async function handleClipRequest(req, res, responseType = 'text') {
     const performCreate = async (token) => {
         const clipData = await createClip({ broadcasterId, userToken: token });
         const clipUrl = clipData.url || '';
-        const msgOk = creator
-            ? (lang === 'es' ? `✅ Clip creado por ${creator}: ${clipUrl}` : `✅ Clip created by ${creator}: ${clipUrl}`)
-            : (lang === 'es' ? `✅ Clip creado: ${clipUrl}` : `✅ Clip created: ${clipUrl}`);
+        const title = clipData.title || 'Clip';
+
+        let msgOk;
+        if (clipData.title) {
+            msgOk = creator
+                ? (lang === 'es' ? `✅ Clip creado por ${creator}: ${title} - ${clipUrl}` : `✅ Clip created by ${creator}: ${title} - ${clipUrl}`)
+                : (lang === 'es' ? `✅ Clip creado: ${title} - ${clipUrl}` : `✅ Clip created: ${title} - ${clipUrl}`);
+        } else {
+            msgOk = creator
+                ? (lang === 'es' ? `✅ Clip creado por ${creator}: ${clipUrl}` : `✅ Clip created by ${creator}: ${clipUrl}`)
+                : (lang === 'es' ? `✅ Clip creado: ${clipUrl}` : `✅ Clip created: ${clipUrl}`);
+        }
 
         const col = await getClipRateCollection();
         await col.insertOne({ user_id: String(userId), created_at: new Date(), expire_at: new Date(Date.now() + CLIP_WINDOW_MS) });

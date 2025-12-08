@@ -24,7 +24,6 @@ function respondError(req, res, opts) {
     return res.status(status).json({ error: code, message });
 }
 
-// Seguro Followage
 router.get('/api/followage', async (req, res) => {
     const viewer = (req.query.touser || req.query.user || req.user?.login || '').toString().trim();
     const defaultChannel = (process.env.TWITCH_CHANNEL_LOGIN || '').toString().trim();
@@ -64,7 +63,6 @@ router.get('/api/followage', async (req, res) => {
     }
 });
 
-// Token Publico Followage
 router.get('/twitch/followage/:streamer/:viewer', async (req, res) => {
     const streamer = req.params.streamer?.toString().trim();
     const viewer = req.params.viewer?.toString().trim();

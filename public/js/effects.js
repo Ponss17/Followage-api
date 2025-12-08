@@ -1,4 +1,3 @@
-// Smooth scroll
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', function (e) {
         e.preventDefault();
@@ -12,7 +11,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 
-// Particulas
 function createParticles() {
     const particlesContainer = document.querySelector('.particles');
     if (!particlesContainer) return;
@@ -37,7 +35,6 @@ function createParticles() {
     }
 }
 
-// fade-in animations
 const observerOptions = {
     threshold: 0.1,
     rootMargin: '0px 0px -50px 0px'
@@ -59,7 +56,6 @@ const observer = new IntersectionObserver((entries) => {
 document.addEventListener('DOMContentLoaded', () => {
     createParticles();
 
-    // fade-in a
     document.querySelectorAll('.card, .hero-content').forEach(card => {
         card.style.opacity = '0';
         card.style.transform = 'translateY(20px)';

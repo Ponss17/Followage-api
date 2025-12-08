@@ -66,7 +66,6 @@ async function handleOAuthCallback(req, res, options) {
             ...extraData
         };
 
-        // Persist token to DB immediately
         try {
             let type = 'user';
             if (extraData.scope === 'clips:edit') type = 'clips';
@@ -92,8 +91,6 @@ async function handleOAuthCallback(req, res, options) {
         res.status(500).send(err?.message || 'Error en callback de OAuth');
     }
 }
-
-// --- Rutass ---
 
 router.get('/login', (req, res) => {
     const clientId = process.env.TWITCH_CLIENT_ID;

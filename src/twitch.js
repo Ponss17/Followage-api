@@ -284,6 +284,10 @@ export async function createClip({ broadcasterId, userToken }) {
   const clientId = process.env.TWITCH_CLIENT_ID;
   const url = new URL('https://api.twitch.tv/helix/clips');
   url.searchParams.set('broadcaster_id', broadcasterId);
+
+  let createdClipId = null;
+  let editUrl = null;
+
   let attempts = 0;
   const maxAttempts = 2;
   while (attempts < maxAttempts) {
@@ -317,11 +321,9 @@ export async function createClip({ broadcasterId, userToken }) {
         err.statusCode = 500;
         throw err;
       }
-      return {
-        id: clip.id,
-        edit_url: clip.edit_url,
-        url: `https://clips.twitch.tv/${clip.id}`
-      };
+      createdClipId = clip.id;
+      editUrl = clip.edit_url;
+      break;
     } catch (err) {
       clearTimeout(timeout);
       if (attempts >= (maxAttempts - 1)) throw err;
@@ -329,4 +331,52 @@ export async function createClip({ broadcasterId, userToken }) {
       await new Promise(r => setTimeout(r, 500 * attempts));
     }
   }
+
+  if (createdClipId) {
+    let metaAttempts = 0;
+    while (metaAttempts < 3) {
+      await new Promise(r => setTimeout(r, 1000 + (metaAttempts * 500)));
+      try {
+        const metaParams = { id: createdClipId };
+        const metaUrl = new URL('https://api.twitch.tv/helix/clips');
+        metaUrl.searchParams.set('id', createdClipId);
+
+        const resp = await fetch(metaUrl, {
+          headers: {
+            'Client-Id': clientId,
+            'Authorization': `Bearer ${userToken}`
+          }
+        });
+
+        if (resp.ok) {
+          const j = await resp.json();
+          const info = j.data?.[0];
+          if (info) {
+            return {
+              id: info.id,
+              url: info.url,
+              embed_url: info.embed_url,
+              title: info.title,
+              view_count: info.view_count,
+              created_at: info.created_at,
+              thumbnail_url: info.thumbnail_url,
+              duration: info.duration,
+              creator_name: info.creator_name,
+              broadcaster_name: info.broadcaster_name,
+              edit_url: editUrl
+            };
+          }
+        }
+      } catch (e) {
+        console.warn('Error fetching clip meta:', e);
+      }
+      metaAttempts++;
+    }
+  }
+
+  return {
+    id: createdClipId,
+    edit_url: editUrl,
+    url: `https://clips.twitch.tv/${createdClipId}`
+  };
 }
