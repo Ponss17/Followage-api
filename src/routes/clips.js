@@ -38,7 +38,7 @@ async function handleClipRequest(req, res, responseType = 'text') {
     };
 
     if (!userToken) {
-        const msg = lang === 'es' ? 'Debes iniciar sesión para crear clips' : 'Authentication required to create clips';
+        const msg = lang === 'es' ? 'Debes iniciar sesión para crear clips.' : 'Authentication required to create clips';
         return sendResponse(401, msg);
     }
 
