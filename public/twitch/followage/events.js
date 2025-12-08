@@ -58,7 +58,7 @@ async function refreshAuth() {
       }
     }
     updateFormMode();
-  } catch (_) {}
+  } catch (_) { }
 }
 async function refreshChannelAuth() {
   try {
@@ -99,7 +99,7 @@ async function refreshChannelAuth() {
       }
       updateFormMode();
     }
-  } catch (_) {}
+  } catch (_) { }
 }
 let currentFetchController = null;
 export async function initFollowageUI() {
@@ -108,7 +108,8 @@ export async function initFollowageUI() {
   const channelLoginBtn = document.getElementById('channelLoginBtn');
   const channelLogoutBtn = document.getElementById('channelLogoutBtn');
   if (loginBtn) loginBtn.addEventListener('click', () => { window.location.href = new URL('/auth/login', window.location.origin).toString(); });
-  if (logoutBtn) logoutBtn.addEventListener('click', async () => { try { await fetch('/auth/logout', { method: 'POST' }); } catch (_){ }
+  if (logoutBtn) logoutBtn.addEventListener('click', async () => {
+    try { await fetch('/auth/logout', { method: 'POST' }); } catch (_) { }
     isAuthenticated = false;
     const d = getDict();
     const authStatusEl = document.getElementById('authStatus');
@@ -120,7 +121,8 @@ export async function initFollowageUI() {
     updateFormMode();
   });
   if (channelLoginBtn) channelLoginBtn.addEventListener('click', () => { window.location.href = new URL('/auth/channel/login', window.location.origin).toString(); });
-  if (channelLogoutBtn) channelLogoutBtn.addEventListener('click', async () => { try { await fetch('/auth/channel/logout', { method: 'POST' }); } catch (_){ }
+  if (channelLogoutBtn) channelLogoutBtn.addEventListener('click', async () => {
+    try { await fetch('/auth/channel/logout', { method: 'POST' }); } catch (_) { }
     isChannelAuthenticated = false;
     const d = getDict();
     const channelAuthStatusEl = document.getElementById('channelAuthStatus');
@@ -165,10 +167,10 @@ export async function initFollowageUI() {
   const urlGenericExampleEl = document.getElementById('urlGenericExample');
   const seUrlExampleEl = document.getElementById('seUrlExample');
   const seUrlGenericExampleEl = document.getElementById('seUrlGenericExample');
-  if (copyUrlExampleBtn && urlExampleEl) copyUrlExampleBtn.addEventListener('click', () => copyToClipboard(urlExampleEl.textContent, copyUrlExampleBtn));
-  if (copyUrlGenericBtn && urlGenericExampleEl) copyUrlGenericBtn.addEventListener('click', () => copyToClipboard(urlGenericExampleEl.textContent, copyUrlGenericBtn));
-  if (copySeUrlExampleBtn && seUrlExampleEl) copySeUrlExampleBtn.addEventListener('click', () => copyToClipboard(seUrlExampleEl.textContent, copySeUrlExampleBtn));
-  if (copySeUrlGenericBtn && seUrlGenericExampleEl) copySeUrlGenericBtn.addEventListener('click', () => copyToClipboard(seUrlGenericExampleEl.textContent, copySeUrlGenericBtn));
+  if (copyUrlExampleBtn && urlExampleEl) copyUrlExampleBtn.addEventListener('click', () => copyToClipboard(urlExampleEl.getAttribute('data-full-command') || urlExampleEl.textContent, copyUrlExampleBtn));
+  if (copyUrlGenericBtn && urlGenericExampleEl) copyUrlGenericBtn.addEventListener('click', () => copyToClipboard(urlGenericExampleEl.getAttribute('data-full-command') || urlGenericExampleEl.textContent, copyUrlGenericBtn));
+  if (copySeUrlExampleBtn && seUrlExampleEl) copySeUrlExampleBtn.addEventListener('click', () => copyToClipboard(seUrlExampleEl.getAttribute('data-full-command') || seUrlExampleEl.textContent, copySeUrlExampleBtn));
+  if (copySeUrlGenericBtn && seUrlGenericExampleEl) copySeUrlGenericBtn.addEventListener('click', () => copyToClipboard(seUrlGenericExampleEl.getAttribute('data-full-command') || seUrlGenericExampleEl.textContent, copySeUrlGenericBtn));
 
   const form = document.getElementById('followage-form');
   form.addEventListener('submit', async (e) => {
@@ -207,12 +209,25 @@ export async function initFollowageUI() {
     if (!viewer) { resultEl.textContent = dict.completeBoth; if (submitBtn) submitBtn.disabled = false; return; }
 
     if (!channel) {
-      const urls = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, authCode, linkType);
+      const urlsFull = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, authCode, linkType);
+
+      // Masking
+      const authCodeMasked = authCode ? `${authCode.substring(0, 4)}...${authCode.substring(authCode.length - 4)}` : '';
+      const moderatorIdMasked = moderatorId ? `${moderatorId.substring(0, 2)}...` : '';
+      const channelTokenMasked = channelToken ? `${channelToken.substring(0, 4)}...` : '';
+      const urlsMasked = buildFollowageUrls(viewer, channel, lang, format, moderatorIdMasked, channelTokenMasked, authCodeMasked, linkType);
+
       const urlGenericExampleEl = document.getElementById('urlGenericExample');
       const seUrlGenericExampleEl = document.getElementById('seUrlGenericExample');
-      if (urlGenericExampleEl) urlGenericExampleEl.textContent = `$(urlfetch ${urls.genericUrl})`;
+      if (urlGenericExampleEl) {
+        urlGenericExampleEl.textContent = `$(urlfetch ${urlsMasked.genericUrl})`;
+        urlGenericExampleEl.setAttribute('data-full-command', `$(urlfetch ${urlsFull.genericUrl})`);
+      }
       if (urlGenericBlockElNb) urlGenericBlockElNb.style.display = '';
-      if (seUrlGenericExampleEl) seUrlGenericExampleEl.textContent = `$(customapi ${urls.genericUrl})`;
+      if (seUrlGenericExampleEl) {
+        seUrlGenericExampleEl.textContent = `$(customapi ${urlsMasked.genericUrl})`;
+        seUrlGenericExampleEl.setAttribute('data-full-command', `$(customapi ${urlsFull.genericUrl})`);
+      }
       if (urlGenericBlockEl) urlGenericBlockEl.style.display = '';
       if (urlBlockEl) urlBlockEl.style.display = 'none';
       if (seUrlBlockEl) seUrlBlockEl.style.display = 'none';
@@ -223,13 +238,28 @@ export async function initFollowageUI() {
 
     resultEl.textContent = dict.consulting;
     try {
-      const urls = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, authCode, linkType);
-      const r = await fetch(urls.fetchUrl, { signal: currentFetchController.signal });
+      const urlsFull = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, authCode, linkType);
+
+      // Masking
+      const authCodeMasked = authCode ? `${authCode.substring(0, 4)}...${authCode.substring(authCode.length - 4)}` : '';
+      const moderatorIdMasked = moderatorId ? `${moderatorId.substring(0, 2)}...` : '';
+      const channelTokenMasked = channelToken ? `${channelToken.substring(0, 4)}...` : '';
+      const urlsMasked = buildFollowageUrls(viewer, channel, lang, format, moderatorIdMasked, channelTokenMasked, authCodeMasked, linkType);
+
+      const r = await fetch(urlsFull.fetchUrl, { signal: currentFetchController.signal });
       let resp = r.ok ? r : null;
       const seUrlExampleEl2 = document.getElementById('seUrlExample');
       const seUrlGenericExampleEl2 = document.getElementById('seUrlGenericExample');
-      if (seUrlBlockEl && seUrlExampleEl2 && urls.displayUrl) { seUrlExampleEl2.textContent = `$(customapi ${urls.displayUrl})`; seUrlBlockEl.style.display = ''; }
-      if (urlGenericBlockEl && seUrlGenericExampleEl2 && urls.genericUrl) { seUrlGenericExampleEl2.textContent = `$(customapi ${urls.genericUrl})`; urlGenericBlockEl.style.display = ''; }
+      if (seUrlBlockEl && seUrlExampleEl2 && urlsFull.displayUrl) {
+        seUrlExampleEl2.textContent = `$(customapi ${urlsMasked.displayUrl})`;
+        seUrlExampleEl2.setAttribute('data-full-command', `$(customapi ${urlsFull.displayUrl})`);
+        seUrlBlockEl.style.display = '';
+      }
+      if (urlGenericBlockEl && seUrlGenericExampleEl2 && urlsFull.genericUrl) {
+        seUrlGenericExampleEl2.textContent = `$(customapi ${urlsMasked.genericUrl})`;
+        seUrlGenericExampleEl2.setAttribute('data-full-command', `$(customapi ${urlsFull.genericUrl})`);
+        urlGenericBlockEl.style.display = '';
+      }
       if (!resp) {
         if (!isAuthenticated) { resultEl.textContent = dict.mustAuth; return; }
         const apiUrl = new URL('/api/followage', window.location.origin);
@@ -250,8 +280,16 @@ export async function initFollowageUI() {
       const urlExampleEl2 = document.getElementById('urlExample');
       const urlGenericExampleEl2 = document.getElementById('urlGenericExample');
       const urlGenericBlockEl2 = document.getElementById('url-generic-block');
-      if (urlBlockEl && urlExampleEl2 && urls.displayUrl) { urlExampleEl2.textContent = `$(urlfetch ${urls.displayUrl})`; urlBlockEl.style.display = ''; }
-      if (urlGenericBlockEl2 && urlGenericExampleEl2 && urls.genericUrl) { urlGenericExampleEl2.textContent = `$(urlfetch ${urls.genericUrl})`; urlGenericBlockEl2.style.display = ''; }
+      if (urlBlockEl && urlExampleEl2 && urlsFull.displayUrl) {
+        urlExampleEl2.textContent = `$(urlfetch ${urlsMasked.displayUrl})`;
+        urlExampleEl2.setAttribute('data-full-command', `$(urlfetch ${urlsFull.displayUrl})`);
+        urlBlockEl.style.display = '';
+      }
+      if (urlGenericBlockEl2 && urlGenericExampleEl2 && urlsFull.genericUrl) {
+        urlGenericExampleEl2.textContent = `$(urlfetch ${urlsMasked.genericUrl})`;
+        urlGenericExampleEl2.setAttribute('data-full-command', `$(urlfetch ${urlsFull.genericUrl})`);
+        urlGenericBlockEl2.style.display = '';
+      }
     } catch (err) {
       const d = getDict();
       resultEl.textContent = `${d.errorPrefix}${err?.message || d.unknownError}`;
@@ -315,16 +353,29 @@ export async function initFollowageUI() {
         const channelToken = (document.getElementById('channelToken')?.value || '').toString().trim();
         const linkTypeRadios2 = document.getElementsByName('linkType');
         let linkType2 = 'secure'; for (const r of linkTypeRadios2) { if (r.checked) { linkType2 = r.value; break; } }
-        const urls = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, code, linkType2);
+        const urlsFull = buildFollowageUrls(viewer, channel, lang, format, moderatorId, channelToken, code, linkType2);
+
+        // Masking
+        const authCodeMasked = code ? `${code.substring(0, 4)}...${code.substring(code.length - 4)}` : '';
+        const moderatorIdMasked = moderatorId ? `${moderatorId.substring(0, 2)}...` : '';
+        const channelTokenMasked = channelToken ? `${channelToken.substring(0, 4)}...` : '';
+        const urlsMasked = buildFollowageUrls(viewer, channel, lang, format, moderatorIdMasked, channelTokenMasked, authCodeMasked, linkType2);
+
         if (!channel) {
           const urlGenericExampleEl = document.getElementById('urlGenericExample');
           const seUrlGenericExampleEl = document.getElementById('seUrlGenericExample');
           const urlBlockEl2 = document.getElementById('url-block');
           const seUrlBlockEl2 = document.getElementById('se-url-block');
           const nbBlock = document.getElementById('url-generic-block');
-          if (urlGenericExampleEl) urlGenericExampleEl.textContent = `$(urlfetch ${urls.genericUrl})`;
+          if (urlGenericExampleEl) {
+            urlGenericExampleEl.textContent = `$(urlfetch ${urlsMasked.genericUrl})`;
+            urlGenericExampleEl.setAttribute('data-full-command', `$(urlfetch ${urlsFull.genericUrl})`);
+          }
           if (nbBlock) nbBlock.style.display = '';
-          if (seUrlGenericExampleEl) seUrlGenericExampleEl.textContent = `$(customapi ${urls.genericUrl})`;
+          if (seUrlGenericExampleEl) {
+            seUrlGenericExampleEl.textContent = `$(customapi ${urlsMasked.genericUrl})`;
+            seUrlGenericExampleEl.setAttribute('data-full-command', `$(customapi ${urlsFull.genericUrl})`);
+          }
           const seGenBlock = document.getElementById('se-url-generic-block');
           if (seGenBlock) seGenBlock.style.display = '';
           if (urlBlockEl2) urlBlockEl2.style.display = 'none';
@@ -336,11 +387,23 @@ export async function initFollowageUI() {
           const seUrlBlockEl = document.getElementById('se-url-block');
           const seUrlGenericExampleEl = document.getElementById('seUrlGenericExample');
           const seUrlGenericBlockEl = document.getElementById('se-url-generic-block');
-          if (urlExampleEl) urlExampleEl.textContent = `$(urlfetch ${urls.displayUrl})`;
-          if (urlGenericExampleEl) urlGenericExampleEl.textContent = `$(urlfetch ${urls.genericUrl})`;
-          if (seUrlExampleEl) seUrlExampleEl.textContent = `$(customapi ${urls.displayUrl})`;
+          if (urlExampleEl) {
+            urlExampleEl.textContent = `$(urlfetch ${urlsMasked.displayUrl})`;
+            urlExampleEl.setAttribute('data-full-command', `$(urlfetch ${urlsFull.displayUrl})`);
+          }
+          if (urlGenericExampleEl) {
+            urlGenericExampleEl.textContent = `$(urlfetch ${urlsMasked.genericUrl})`;
+            urlGenericExampleEl.setAttribute('data-full-command', `$(urlfetch ${urlsFull.genericUrl})`);
+          }
+          if (seUrlExampleEl) {
+            seUrlExampleEl.textContent = `$(customapi ${urlsMasked.displayUrl})`;
+            seUrlExampleEl.setAttribute('data-full-command', `$(customapi ${urlsFull.displayUrl})`);
+          }
           if (seUrlBlockEl) seUrlBlockEl.style.display = '';
-          if (seUrlGenericExampleEl) seUrlGenericExampleEl.textContent = `$(customapi ${urls.genericUrl})`;
+          if (seUrlGenericExampleEl) {
+            seUrlGenericExampleEl.textContent = `$(customapi ${urlsMasked.genericUrl})`;
+            seUrlGenericExampleEl.setAttribute('data-full-command', `$(customapi ${urlsFull.genericUrl})`);
+          }
           if (seUrlGenericBlockEl) seUrlGenericBlockEl.style.display = '';
         }
       } catch (_) {
