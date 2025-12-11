@@ -144,7 +144,7 @@ router.get('/channel/callback', async (req, res) => {
         handleOAuthCallback(req, res, {
             redirectUri: getRedirectUri(req).replace('/auth/callback', '/auth/channel/callback'),
             cookieSetter: customSetter,
-            redirectPath: '/',
+            redirectPath: '/followage/',
             extraData: { scope: 'moderator:read:followers' }
         }).catch(reject);
     }).catch(() => null);
