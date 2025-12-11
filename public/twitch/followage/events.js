@@ -1,5 +1,5 @@
-import { currentLang, getDict, labelForState, updateUrlLabels } from '../../../js/i18n.js';
-import { copyToClipboard, setupCopy } from '../../../js/copy.js';
+import { currentLang, getDict, labelForState, updateUrlLabels } from '../../js/i18n.js';
+import { copyToClipboard, setupCopy } from '../../js/copy.js';
 import { buildFollowageUrls } from './commands.js';
 
 let isAuthenticated = false;

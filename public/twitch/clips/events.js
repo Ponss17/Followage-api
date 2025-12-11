@@ -1,4 +1,4 @@
-import { setupCopy } from '../../../js/copy.js';
+import { setupCopy } from '../../js/copy.js';
 
 function renderCommands(baseUrl, authCode, userId, token) {
   const authParam = authCode ? `auth=${authCode}` : `user_id=${userId}&token=${token}`;
