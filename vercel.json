@@ -1,6 +1,18 @@
 {
   "rewrites": [
     {
+      "source": "/auth/(.*)",
+      "destination": "/api/app"
+    },
+    {
+      "source": "/twitch/(.*)",
+      "destination": "/api/app"
+    },
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/app"
+    },
+    {
       "source": "/",
       "destination": "/public/index.html"
     },
