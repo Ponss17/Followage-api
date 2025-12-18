@@ -9,6 +9,22 @@
       "destination": "/twitch/clips/$1"
     },
     {
+      "source": "/clips/(.*)",
+      "destination": "/api/app"
+    },
+    {
+      "source": "/channel/(.*)",
+      "destination": "/api/app"
+    },
+    {
+      "source": "/me",
+      "destination": "/api/app"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/app"
+    },
+    {
       "source": "/auth/(.*)",
       "destination": "/api/app"
     },
