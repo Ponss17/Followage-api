@@ -1,6 +1,30 @@
 {
   "rewrites": [
     {
+      "source": "/js/(.*)",
+      "destination": "/public/js/$1"
+    },
+    {
+      "source": "/css/(.*)",
+      "destination": "/public/css/$1"
+    },
+    {
+      "source": "/imgs/(.*)",
+      "destination": "/public/imgs/$1"
+    },
+    {
+      "source": "/favicon.ico",
+      "destination": "/public/favicon.ico"
+    },
+    {
+      "source": "/twitch/clips/",
+      "destination": "/public/twitch/clips/index.html"
+    },
+    {
+      "source": "/twitch/clips/(.*)",
+      "destination": "/public/twitch/clips/$1"
+    },
+    {
       "source": "/auth/(.*)",
       "destination": "/api/app"
     },
