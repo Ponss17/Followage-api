@@ -1,28 +1,12 @@
 {
   "rewrites": [
     {
-      "source": "/js/(.*)",
-      "destination": "/public/js/$1"
-    },
-    {
-      "source": "/css/(.*)",
-      "destination": "/public/css/$1"
-    },
-    {
-      "source": "/imgs/(.*)",
-      "destination": "/public/imgs/$1"
-    },
-    {
-      "source": "/favicon.ico",
-      "destination": "/public/favicon.ico"
-    },
-    {
-      "source": "/twitch/clips/",
-      "destination": "/public/twitch/clips/index.html"
+      "source": "/twitch/clips",
+      "destination": "/twitch/clips/index.html"
     },
     {
       "source": "/twitch/clips/(.*)",
-      "destination": "/public/twitch/clips/$1"
+      "destination": "/twitch/clips/$1"
     },
     {
       "source": "/auth/(.*)",
@@ -35,14 +19,6 @@
     {
       "source": "/api/(.*)",
       "destination": "/api/app"
-    },
-    {
-      "source": "/",
-      "destination": "/public/index.html"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/public/$1"
     }
   ]
 }
