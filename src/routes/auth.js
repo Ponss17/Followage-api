@@ -129,7 +129,7 @@ router.get('/callback', async (req, res) => {
     await handleOAuthCallback(req, res, {
         redirectUri: getRedirectUri(req),
         cookieSetter: setAuthCookie,
-        redirectPath: '/'
+        redirectPath: '/followage/'
     });
 });
 
