@@ -1,8 +1,30 @@
+.hero {
+    position: relative;
+    padding: 120px 0 60px;
+}
+
+.hero p {
+    font-size: 1.25rem;
+    max-width: 600px;
+    margin: 0 auto 40px;
+    line-height: 1.6;
+    color: var(--muted);
+}
+
+.site-logo {
+    transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.site-logo:hover {
+    transform: rotate(5deg) scale(1.05);
+}
+
 .landing-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 24px;
-    margin-top: 40px;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 32px;
+    margin-top: 60px;
+    padding: 0 20px;
 }
 
 .landing-card {
@@ -12,25 +34,82 @@
     align-items: center;
     text-align: center;
     height: 100%;
+    padding: 40px 30px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+.landing-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+}
+
+.landing-card:hover {
+    transform: translateY(-8px);
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+}
+
+.landing-card:hover::before {
+    opacity: 1;
 }
 
 .landing-card .icon {
-    font-size: 4rem;
+    font-size: 4.5rem;
     margin-bottom: 1.5rem;
-    transition: transform 0.3s ease;
+    transition: transform 0.4s ease;
+    filter: drop-shadow(0 0 15px rgba(167, 139, 250, 0.2));
 }
 
 .landing-card:hover .icon {
-    transform: scale(1.1) rotate(5deg);
+    transform: scale(1.15) rotate(5deg);
 }
 
-.landing-card h2 {
-    margin-bottom: 0.5rem;
-    border-bottom: none;
-    padding-bottom: 0;
+.landing-card h3 {
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    background: linear-gradient(to right, #fff, #ccc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
 }
 
 .landing-card p {
     color: var(--muted);
-    font-size: 0.95rem;
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    flex-grow: 1;
+}
+
+.card-btn {
+    padding: 10px 24px;
+    border-radius: 99px;
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text);
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.landing-card:hover .card-btn {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    box-shadow: 0 0 15px rgba(167, 139, 250, 0.4);
 }
