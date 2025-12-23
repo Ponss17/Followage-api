@@ -109,7 +109,7 @@
 
 .landing-card:hover .card-btn {
     background: var(--accent);
-    color: #fff;
+    color: #000;
     border-color: var(--accent);
-    box-shadow: 0 0 15px rgba(167, 139, 250, 0.4);
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
 }
