@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LosPerris API - Tools</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="/img/LosPerris-gamer.ico" type="image/x-icon" sizes="any">
+    <style>
+        :root {
+            --bg: #1e1e2f;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --accent: #a78bfa;
+            --accent-hover: #8b5cf6;
+            --text: #e2e8f0;
+        }
+
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(135deg, #fff 0%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            margin-bottom: 3rem;
+            font-size: 1.2rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 2rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+            border-color: var(--accent);
+        }
+
+        .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .card h2 {
+            margin: 0 0 0.5rem 0;
+        }
+
+        .card p {
+            color: #94a3b8;
+            font-size: 0.9rem;
+        }
+
+        footer {
+            margin-top: auto;
+            padding: 1rem;
+            color: #64748b;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>LosPerris API</h1>
+        <p class="subtitle">Herramientas gratuitas para Twitch</p>
+
+        <div class="grid">
+            <a href="/twitch/followage/" class="card">
+                <div class="icon">⏱️</div>
+                <h2>Followage Tool</h2>
+                <p>Consulta cuánto tiempo llevas siguiendo a un canal. Ideal para comandos de chat.</p>
+            </a>
+            <a href="/twitch/clips/" class="card">
+                <div class="icon">🎬</div>
+                <h2>Clips Tool</h2>
+                <p>Busca, descarga y gestiona clips de Twitch. Crea clips fácilmente.</p>
+            </a>
+        </div>
+    </div>
+
+    <footer>
+        © LosPerris.site
+    </footer>
+</body>
+
+</html>
