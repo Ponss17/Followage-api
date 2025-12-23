@@ -42,9 +42,7 @@ app.use(clipsRoutes);
 app.use(generalRoutes);
 
 app.use(express.static(publicDir));
-app.get('/', (_req, res) => {
-  res.sendFile(path.join(publicDir, 'index.html'));
-});
+
 app.get('/error', (_req, res) => {
   res.sendFile(path.join(publicDir, 'error.html'));
 });

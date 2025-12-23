@@ -129,7 +129,7 @@ router.get('/callback', async (req, res) => {
     await handleOAuthCallback(req, res, {
         redirectUri: getRedirectUri(req),
         cookieSetter: setAuthCookie,
-        redirectPath: '/followage/'
+        redirectPath: 'https://www.losperris.site/twitch/followage/'
     });
 });
 
@@ -144,7 +144,7 @@ router.get('/channel/callback', async (req, res) => {
         handleOAuthCallback(req, res, {
             redirectUri: getRedirectUri(req).replace('/auth/callback', '/auth/channel/callback'),
             cookieSetter: customSetter,
-            redirectPath: '/followage/',
+            redirectPath: 'https://www.losperris.site/twitch/followage/',
             extraData: { scope: 'moderator:read:followers' }
         }).catch(reject);
     }).catch(() => null);
